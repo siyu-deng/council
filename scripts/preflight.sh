@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # Council · demo 前 dry run 检查脚本
-# 用法: bash scripts/preflight.sh [--mock] [--skip-convene]
+# 用法: bash scripts/preflight.sh [--mock] [--skip-convene] [--skip-web]
 #
 #   --mock         不调真实 API, 用 COUNCIL_MOCK=1 走打桩 (快, 省钱)
 #   --skip-convene 只跑 init/capture/distill, 跳过 convene (避免烧 API)
+#   --skip-web     不检查 web build + live server (只验 CLI/MCP)
 #
 # 完整跑一次 (真实 API) 大约 2 分钟 + 几美分 Haiku 调用。
 
@@ -12,6 +13,7 @@ set -euo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SANDBOX="/tmp/.council-preflight-$$"
 FAKE_MATERIAL="$REPO/自我的材料/Claude-用第一性原理重构饮食系统.md"
+SKIP_WEB=0
 
 MOCK=0
 SKIP_CONVENE=0
@@ -19,6 +21,7 @@ for arg in "$@"; do
   case "$arg" in
     --mock) MOCK=1 ;;
     --skip-convene) SKIP_CONVENE=1 ;;
+    --skip-web) SKIP_WEB=1 ;;
     *) echo "未知参数: $arg" >&2; exit 2 ;;
   esac
 done
@@ -143,6 +146,79 @@ else
   fi
   ok "convene ($(( t1 - t0 ))s) — stdout 干净, transcript $(basename "$TRANSCRIPT")"
   printf "%b  末尾: %s%b\n" "$D" "${LAST_LINE:0:80}" "$N"
+fi
+
+if [[ "$SKIP_WEB" == "1" ]]; then
+  say ""
+  warn "跳过 web/live server 检查 (--skip-web)"
+else
+  say ""
+  say "── 6) Web build (dist/) 检查 ──"
+  WEB_DIST="$REPO/web/dist"
+  if [[ ! -d "$WEB_DIST" ]]; then
+    warn "web/dist 不存在, 尝试 bun run build..."
+    (cd "$REPO/web" && bun run build >/tmp/council-preflight-webbuild.log 2>&1) || {
+      die "web build 失败, 查看 /tmp/council-preflight-webbuild.log"
+    }
+  fi
+  [[ -f "$WEB_DIST/index.html" ]] || die "web/dist/index.html 不存在"
+  ASSETS=$(ls "$WEB_DIST/assets"/*.js 2>/dev/null | wc -l | tr -d ' ')
+  [[ "$ASSETS" -ge 1 ]] || die "web/dist/assets 没有 JS 产物"
+  WEB_SIZE=$(du -sh "$WEB_DIST" | awk '{print $1}')
+  ok "web/dist 就位 (${ASSETS} 个 JS chunk, ${WEB_SIZE})"
+
+  say ""
+  say "── 7) Live server (HTTP+WS) 烟雾测试 ──"
+  # 找一个没被占的端口
+  LIVE_PORT=3740
+  while nc -z 127.0.0.1 $LIVE_PORT 2>/dev/null; do LIVE_PORT=$((LIVE_PORT+1)); done
+  COUNCIL_LIVE_PORT=$LIVE_PORT bun run "$REPO/src/server/live.ts" \
+    1>/tmp/council-preflight-live.out 2>/tmp/council-preflight-live.err &
+  LIVE_PID=$!
+  sleep 1.2
+  # health check
+  HEALTH=$(curl -s "http://127.0.0.1:${LIVE_PORT}/api/health" || echo "")
+  [[ "$HEALTH" == *'"ok":true'* ]] || { kill $LIVE_PID 2>/dev/null; die "live server /api/health 失败: $HEALTH"; }
+  # static file
+  INDEX_HEAD=$(curl -s "http://127.0.0.1:${LIVE_PORT}/" | head -c 50)
+  [[ "$INDEX_HEAD" == *"<!doctype"* || "$INDEX_HEAD" == *"<!DOCTYPE"* ]] || {
+    kill $LIVE_PID 2>/dev/null; die "live server 不能 serve dist/ (得到: $INDEX_HEAD)"
+  }
+  # WS + command dispatch
+  WS_RESULT=$(bun -e "
+  const runId = 'preflight-' + Math.random().toString(36).slice(2,8);
+  const ws = new WebSocket('ws://127.0.0.1:${LIVE_PORT}/ws?run_id=' + runId);
+  let phases = new Set();
+  let done = false;
+  ws.onopen = async () => {
+    const res = await fetch('http://127.0.0.1:${LIVE_PORT}/api/command', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({type:'convene', args: {
+        question: 'preflight', with: 'mentors:naval,mentors:jobs,roles:devils-advocate',
+        run_id: runId, structuredSynthesis: false,
+      }}),
+    });
+    const j = await res.json();
+    if (!j.ok) { console.error('NO: command ' + j.error); process.exit(1); }
+  };
+  ws.onmessage = (e) => {
+    const ev = JSON.parse(e.data);
+    if (ev.t === 'phase.started') phases.add(ev.phase);
+    if (ev.t === 'run.done') {
+      console.log([...phases].join('+'));
+      done = true; ws.close(); process.exit(0);
+    }
+    if (ev.t === 'run.failed') { console.error('NO: ' + ev.error); process.exit(1); }
+  };
+  setTimeout(() => { console.error('NO: timeout'); process.exit(2); }, 20000);
+  " 2>&1 || echo "ERR")
+  kill $LIVE_PID 2>/dev/null || true
+  wait $LIVE_PID 2>/dev/null || true
+  if [[ "$WS_RESULT" == *"summon"* && "$WS_RESULT" == *"statement"* && "$WS_RESULT" == *"synthesis"* ]]; then
+    ok "live server 完整闭环 (phases: ${WS_RESULT})"
+  else
+    die "live server WS 闭环失败: $WS_RESULT"
+  fi
 fi
 
 say ""
