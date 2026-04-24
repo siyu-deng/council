@@ -168,11 +168,12 @@ else
   ok "web/dist 就位 (${ASSETS} 个 JS chunk, ${WEB_SIZE})"
 
   say ""
-  say "── 7) Live server (HTTP+WS) 烟雾测试 ──"
+  say "── 7) Live server (HTTP+WS) 烟雾测试 (mock) ──"
+  # step 5 已验了真实 API; 这一步只是验 WS 管道不漏事件, 强制 mock 确保 20s 够
   # 找一个没被占的端口
   LIVE_PORT=3740
   while nc -z 127.0.0.1 $LIVE_PORT 2>/dev/null; do LIVE_PORT=$((LIVE_PORT+1)); done
-  COUNCIL_LIVE_PORT=$LIVE_PORT bun run "$REPO/src/server/live.ts" \
+  COUNCIL_LIVE_PORT=$LIVE_PORT COUNCIL_MOCK=1 bun run "$REPO/src/server/live.ts" \
     1>/tmp/council-preflight-live.out 2>/tmp/council-preflight-live.err &
   LIVE_PID=$!
   sleep 1.2
