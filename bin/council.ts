@@ -76,10 +76,28 @@ program
     "-w, --with <personas>",
     '逗号分隔, 如 "mentors:naval,self:first-principles"',
   )
+  .option(
+    "--watch",
+    "打开网页圆桌直播 (启动本地 live server + 浏览器自动打开)",
+  )
+  .option("--no-structured", "关闭结构化 synthesis, 走流式 Markdown 回退")
   .option("--no-stream", "关闭流式输出 (debug)")
   .action(async (questionWords, opts) => {
     const question = (questionWords as string[]).join(" ");
     await conveneCommand(question, opts);
+  });
+
+// ━━━ live (standalone live server, 不发起议会) ━━━
+program
+  .command("live")
+  .description("仅启动 Council Live Server (端口 3737), 不发起议会")
+  .option("-p, --port <n>", "端口 (默认 3737)", (v) => parseInt(v, 10))
+  .action(async (opts) => {
+    const { startLiveServer } = await import("../src/server/live.ts");
+    startLiveServer({ port: opts.port });
+    log.muted("  按 Ctrl+C 结束");
+    // keep alive
+    process.stdin.resume();
   });
 
 // ━━━ feedback / evolve / merge ━━━

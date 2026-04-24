@@ -5,17 +5,17 @@ import { distillAll, distillOne } from "../engine/distill.ts";
 
 export async function distillCommand(
   sessionId: string | undefined,
-  opts: { auto?: boolean },
+  opts: { auto?: boolean; runId?: string },
 ): Promise<void> {
   if (!isInitialized()) throw new NotInitializedError();
 
   if (sessionId) {
-    await distillOne(sessionId);
+    await distillOne(sessionId, opts.runId);
     return;
   }
 
   if (opts.auto) {
-    await distillAll();
+    await distillAll(opts.runId);
     return;
   }
 

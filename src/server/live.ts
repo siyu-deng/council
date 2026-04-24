@@ -85,32 +85,69 @@ async function dispatchCommand(
       const q = String(req.args.question ?? "").trim();
       if (!q) return { ok: false, error: "question required" };
       const withRef = req.args.with ? String(req.args.with) : undefined;
-      const runId =
+      const runIdIn =
         (req.args.run_id as string | undefined) ?? undefined;
       const structured = req.args.structuredSynthesis !== false;
-      // 异步跑, 立刻把 run_id 返回给客户端, 让 WS 订阅能赶上
-      const finalRunId =
-        runId ??
-        newSynthRunId(q);
-      // 启动 convene, 不 await — 事件流驱动 UI
+      const finalRunId = runIdIn ?? newSynthRunId(q);
       void convene(q, {
         with: withRef,
         runId: finalRunId,
         structuredSynthesis: structured,
       }).catch((err) => {
-        // convene 内部已经 emit runFailed
         console.error(`[live] convene failed: ${String(err)}`);
       });
       return { ok: true, run_id: finalRunId };
     }
-    // capture / distill 留给 L2 stage 再实现
+
+    if (req.type === "capture") {
+      const body = String(req.args.body ?? "").trim();
+      const title = req.args.title ? String(req.args.title) : undefined;
+      if (!body) return { ok: false, error: "body required" };
+      const runId =
+        (req.args.run_id as string | undefined) ?? newRunIdGeneric("capture");
+      const { captureCommand } = await import("../commands/capture.ts");
+      // 异步跑
+      void captureCommand({ body, title, runId }).catch((err) => {
+        console.error(`[live] capture failed: ${String(err)}`);
+      });
+      return { ok: true, run_id: runId };
+    }
+
+    if (req.type === "distill") {
+      const sessionId = req.args.sessionId
+        ? String(req.args.sessionId)
+        : undefined;
+      const auto = !!req.args.auto;
+      const runId =
+        (req.args.run_id as string | undefined) ?? newRunIdGeneric("distill");
+      const { distillAll, distillOne } = await import("../engine/distill.ts");
+      if (sessionId) {
+        void distillOne(sessionId, runId).catch((err) => {
+          console.error(`[live] distill failed: ${String(err)}`);
+        });
+      } else if (auto) {
+        void distillAll(runId).catch((err) => {
+          console.error(`[live] distill --auto failed: ${String(err)}`);
+        });
+      } else {
+        return { ok: false, error: "sessionId or auto required" };
+      }
+      return { ok: true, run_id: runId };
+    }
+
     return {
       ok: false,
-      error: `command type '${req.type}' not implemented yet`,
+      error: `unknown command type '${req.type}'`,
     };
   } catch (err) {
     return { ok: false, error: String(err) };
   }
+}
+
+function newRunIdGeneric(verb: string): string {
+  const date = new Date().toISOString().slice(0, 10);
+  const rand = Math.random().toString(36).slice(2, 8);
+  return `${date}-${verb}-${rand}`;
 }
 
 function newSynthRunId(question: string): string {

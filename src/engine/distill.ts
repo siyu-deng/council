@@ -17,6 +17,7 @@ import {
   type HighlightType,
 } from "../prompts/P1-identify-highlights.ts";
 import { forgePersona } from "../prompts/P2-forge-persona.ts";
+import { makeEmitter, newRunId } from "./events.ts";
 
 interface StoredHighlight {
   id: string;
@@ -186,21 +187,58 @@ export async function forgePersonasFromAll(): Promise<string[]> {
   return created;
 }
 
-export async function distillAll(): Promise<void> {
-  const sessions = listSessions().filter((s) => !s.frontmatter.distilled);
-  if (sessions.length === 0) {
-    log.muted("没有待蒸馏的 session");
+export async function distillAll(runId?: string): Promise<void> {
+  const rid = runId ?? newRunId("distill");
+  const E = makeEmitter(rid, "distill");
+  E.runStarted();
+  try {
+    const sessions = listSessions().filter((s) => !s.frontmatter.distilled);
+    if (sessions.length === 0) {
+      log.muted("没有待蒸馏的 session");
+      E.log("muted", "没有待蒸馏的 session");
+    }
+    for (const s of sessions) {
+      E.phaseStarted("identify", { sessionId: s.frontmatter.id });
+      const stored = await distillSession(s);
+      for (const h of stored) {
+        E.result("highlight", h);
+      }
+      E.phaseDone("identify", { sessionId: s.frontmatter.id, count: stored.length });
+    }
+    E.phaseStarted("forge");
+    const created = await forgePersonasFromAll();
+    for (const ref of created) E.result("persona", { ref });
+    E.phaseDone("forge", { count: created.length });
+    E.runDone({ personasCreated: created });
+  } catch (err) {
+    E.runFailed(String(err));
+    throw err;
   }
-  for (const s of sessions) {
-    await distillSession(s);
-  }
-  await forgePersonasFromAll();
 }
 
-export async function distillOne(sessionId: string): Promise<void> {
-  const session = getSession(sessionId);
-  await distillSession(session);
-  await forgePersonasFromAll();
+export async function distillOne(
+  sessionId: string,
+  runId?: string,
+): Promise<void> {
+  const rid = runId ?? newRunId("distill", sessionId);
+  const E = makeEmitter(rid, "distill");
+  E.runStarted({ sessionId });
+  try {
+    const session = getSession(sessionId);
+    E.phaseStarted("identify", { sessionId });
+    const stored = await distillSession(session);
+    for (const h of stored) E.result("highlight", h);
+    E.phaseDone("identify", { sessionId, count: stored.length });
+
+    E.phaseStarted("forge");
+    const created = await forgePersonasFromAll();
+    for (const ref of created) E.result("persona", { ref });
+    E.phaseDone("forge", { count: created.length });
+    E.runDone({ personasCreated: created });
+  } catch (err) {
+    E.runFailed(String(err));
+    throw err;
+  }
 }
 
 function arraysEqual<T>(a: T[], b: T[]): boolean {
