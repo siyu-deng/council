@@ -1,0 +1,14 @@
+models:
+  distill: claude-haiku-4-5-20251001
+  summon: claude-haiku-4-5-20251001
+  statement: claude-haiku-4-5-20251001
+  cross_exam: claude-haiku-4-5-20251001
+  synthesis: claude-haiku-4-5-20251001
+  merge: claude-haiku-4-5-20251001
+
+convene:
+  min_personas: 3
+  max_personas: 5
+  require_diversity: true
+
+locale: zh

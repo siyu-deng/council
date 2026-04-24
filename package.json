@@ -1,0 +1,33 @@
+{
+  "name": "councli",
+  "version": "0.1.0",
+  "description": "Council — your personal thinking council. Capture conversations, distill thinking skills, convene multi-persona debates.",
+  "type": "module",
+  "bin": {
+    "council": "./bin/council.ts"
+  },
+  "scripts": {
+    "dev": "bun run bin/council.ts",
+    "build": "bun build bin/council.ts --target=bun --outfile=dist/council.js",
+    "mcp:dev": "bun run src/mcp/server.ts",
+    "preflight": "bash scripts/preflight.sh",
+    "preflight:mock": "bash scripts/preflight.sh --mock",
+    "preflight:fast": "bash scripts/preflight.sh --skip-convene"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.1",
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "boxen": "^8.0.1",
+    "clipboardy": "^4.0.0",
+    "commander": "^12.1.0",
+    "gray-matter": "^4.0.3",
+    "kleur": "^4.1.5",
+    "ora": "^8.1.1",
+    "yaml": "^2.6.1",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.6.3"
+  }
+}

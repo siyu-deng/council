@@ -1,0 +1,12 @@
+node_modules/
+.env
+.env.local
+.DS_Store
+dist/
+*.log
+
+# demo material, not part of the tool
+自我的材料/
+
+# local dev state
+.council-dev/
