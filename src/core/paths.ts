@@ -23,6 +23,7 @@ export const paths = {
   transcripts: () => join(councilRoot(), "transcripts"),
   exports: () => join(councilRoot(), "exports"),
   state: () => join(councilRoot(), ".state"),
+  live: () => join(councilRoot(), "live"),
 
   distilledIndex: () => join(councilRoot(), ".state", "distilled.json"),
   summonCache: () => join(councilRoot(), ".state", "summon-cache.json"),
@@ -58,6 +59,7 @@ export function ensureCouncilDirs(): void {
     paths.transcripts(),
     paths.exports(),
     paths.state(),
+    paths.live(),
   ]) {
     ensureDir(dir);
   }

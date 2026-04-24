@@ -1,6 +1,7 @@
-import { streamText } from "../core/claude.ts";
+import { callJSON, streamText } from "../core/claude.ts";
 import { loadConfig } from "../core/config.ts";
 import { identityBlock } from "./shared.ts";
+import type { SynthesisJSON } from "../engine/events.ts";
 
 const SYSTEM = `你是 Council 的综合者。你不是任何一个 persona, 你读完所有发言和互相质疑后, 给出最终输出。
 
@@ -55,5 +56,91 @@ export async function* streamSynthesis(
     // 实测 Haiku 4.5 经常写到 1500 token 仍未收尾 (中文 + 4 段结构)
     // 给足预算避免 demo 关键一节被截断, 宁愿多烧也不能断尾
     maxTokens: 2560,
+  });
+}
+
+// ──────────────────────────────────────────────────────────
+// 结构化 synthesis — 返回 JSON, 供网页"决议卡"直接渲染
+// ──────────────────────────────────────────────────────────
+
+const SYSTEM_JSON = `你是 Council 的综合者。不是任何一个 persona, 你读完所有发言和互相质疑后, 用结构化 JSON 输出最终综合。
+
+# 核心原则
+
+1. **不追求消除分歧** — 保留分歧本身就是 Council 的核心价值
+2. **不给"既要又要"的和稀泥** — 用户来这里是要被帮助做判断的
+3. **必须指出哪些是共识, 哪些仍是分歧**
+
+# 硬性纪律
+
+❌ consensus 每条不超过 40 字
+❌ dispute.point 要明确 A 说什么 vs B 说什么
+❌ decision 必须给出明确建议 (100-300 字), 不许和稀泥
+❌ meta_insight 只在议会过程真的暴露出新的思考模式时才写, 否则留空
+`;
+
+export async function synthesizeJSON(
+  question: string,
+  statements: { ref: string; statement: string }[],
+  crossExams: { ref: string; critique: string }[],
+): Promise<SynthesisJSON> {
+  const cfg = loadConfig();
+  const statementsBlock = statements
+    .map((s) => `### ${s.ref} 的表态\n${s.statement}`)
+    .join("\n\n");
+  const crossBlock = crossExams
+    .map((c) => `### ${c.ref} 的质疑\n${c.critique}`)
+    .join("\n\n");
+
+  const prompt = `${identityBlock()}\n\n用户问题:\n${question}\n\n# Statements\n\n${statementsBlock}\n\n# Cross-Examinations\n\n${crossBlock}`;
+
+  const schema = {
+    type: "object",
+    properties: {
+      consensus: {
+        type: "array",
+        minItems: 1,
+        maxItems: 4,
+        items: { type: "string", description: "一条共识, 不超过 40 字" },
+      },
+      disputes: {
+        type: "array",
+        minItems: 1,
+        maxItems: 4,
+        items: {
+          type: "object",
+          properties: {
+            a: { type: "string", description: "一方的 persona ref" },
+            b: { type: "string", description: "对立方的 persona ref" },
+            point: {
+              type: "string",
+              description: "明确 a 认为什么 vs b 认为什么, 不超过 80 字",
+            },
+          },
+          required: ["a", "b", "point"],
+        },
+      },
+      decision: {
+        type: "string",
+        description:
+          "如果今天必须决定, 给出的具体建议, 100-300 字, 说明采纳了哪几个 persona 的视角及代价",
+      },
+      meta_insight: {
+        type: "string",
+        description:
+          "议会本身暴露出的新思考模式, 如果没有, 留空字符串或省略",
+      },
+    },
+    required: ["consensus", "disputes", "decision"],
+  };
+
+  return await callJSON<SynthesisJSON>(prompt, {
+    model: cfg.models.synthesis,
+    system: SYSTEM_JSON,
+    label: "synthesis-json",
+    temperature: 0.4,
+    maxTokens: 2560,
+    jsonSchema: schema,
+    toolName: "emit_synthesis",
   });
 }

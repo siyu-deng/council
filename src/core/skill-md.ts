@@ -27,6 +27,9 @@ export interface PersonaFrontmatter {
   score?: number;
   status?: "active" | "stale" | "archived";
   feedback_log?: FeedbackEntry[];
+  /** 视觉元数据 — 网页圆桌渲染用。可选, 未填时引擎会给 fallback */
+  avatar?: string; // emoji 或单字符 (展示在椅背)
+  color?: string; // hex, 椅子/发言框的主色
 }
 
 export interface Persona {
