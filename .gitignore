@@ -10,3 +10,12 @@ dist/
 
 # local dev state
 .council-dev/
+
+# Mac app build output (regenerate via scripts/make-mac-app.sh)
+dist-app/
+
+# temp preflight logs
+/tmp/council-preflight-*
+
+# web build intermediate
+web/tsconfig.tsbuildinfo
