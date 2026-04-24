@@ -6,8 +6,9 @@
 
 ## TL;DR
 
-✅ **L0 + L1 + L2 全部跑通、真实 API 验证通过**
-🟡 **L3 双轨交付**: fallback Council.app 已就位 (可双击), Pake/Tauri 原生构建仍在编译 (Rust 依赖树 ~500 crates, 首次编译 10–15 分钟)
+✅ **L0 + L1 + L2 全部跑通、真实 API 验证通过 (最终 preflight 7/7 绿)**
+✅ **L3 fallback Council.app 已就位 (可双击)**
+❌ **L3 Pake/Tauri 原生构建未能完成** — pnpm/tauri build 报 pnpm 构建错误 (升级 Rust 到 1.95 后仍失败, 原因不明, 留给 post-hackathon 调查). 结论: **fallback 即最终 L3 交付**, 用户体验无差别。
 
 你今天可以直接按 [DEMO.md](./DEMO.md) 排练, 核心路径是:
 
@@ -111,13 +112,18 @@ bun preflight                # ~2 分钟, 花几美分, 全绿 = 放心上
 
 ## 还没完成 / 需要你做决定的事
 
-### 1. Pake Tauri 构建 (状态: 后台编译中)
-- 如果你起床时它已经完成: `ls dist-app/Council.app` 会是一个 10MB 的真 Tauri 应用
-- 如果还没完成或失败: **fallback app 已经在同路径可用**, 双击即可启动
-- 想继续 Pake: `bash scripts/make-mac-app.sh --force-pake`
-- 只要 fallback: `bash scripts/make-mac-app.sh --force-fallback`
+### 1. Pake Tauri 构建 (已退回 fallback, 无需动作)
+Pake 两次尝试都失败:
+- 第一次: cargo 1.76 太老 (lockfile v4 需要 ≥ 1.78) → 升级 Rust 到 1.95
+- 第二次: pnpm + tauri build 在编译完 Rust 依赖后某步报错 (exit 1), 错误日志被 pake-cli 截断, 未能定位根因
 
-**Demo 建议**: fallback 完全够用。Demo 时"一键打开桌面版"观众感知不到底层是 Pake 还是 shell launcher。
+**当前 `dist-app/Council.app` 是 fallback 版本** (500KB shell launcher, 双击启动 server + 开浏览器)。用户感知无差别, demo 完全够用。
+
+如果想继续折腾 Pake:
+- `bash scripts/make-mac-app.sh --force-pake` 看完整日志
+- 怀疑方向: tauri 2.x + pake-cli 3.11.3 版本兼容问题, 或者 rsproxy.cn mirror 拉某个 crate 不完整
+
+**结论**: 黑客松不要碰这个, post-hackathon 再说。
 
 ### 2. Claude Desktop MCP 配置 (你动手)
 这一步需要你真机操作, 无法自动化:
