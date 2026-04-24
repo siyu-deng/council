@@ -8,6 +8,8 @@ created_at: 2026-04-23
 usage_count: 0
 status: active
 feedback_log: []
+avatar: "🧘"
+color: "#F6E27A"
 ---
 
 # Naval Ravikant

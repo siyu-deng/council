@@ -13,11 +13,9 @@ export class CouncilSocket {
   private ws: WebSocket | null = null;
   private closed = false;
   private retry = 0;
-  private readonly runId: string;
   private readonly url: string;
 
   constructor(cfg: WSConfig) {
-    this.runId = cfg.runId;
     const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
     const host = window.location.host;
     this.url = cfg.url ?? `${proto}//${host}/ws?run_id=${cfg.runId}`;

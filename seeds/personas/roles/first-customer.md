@@ -8,6 +8,8 @@ created_at: 2026-04-23
 usage_count: 0
 status: active
 feedback_log: []
+avatar: "🛒"
+color: "#5A8F7B"
 ---
 
 # First Customer
