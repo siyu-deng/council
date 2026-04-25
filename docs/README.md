@@ -4,15 +4,20 @@
 
 ---
 
-## 📣 演讲材料 (pitch)
+## 📣 演讲 / Demo 材料
 
-| 文件 | 用途 | 长度 |
-|---|---|---|
-| [`pitch-3min.md`](pitch-3min.md) | 黑客松现场 3 分钟讲稿 (计时段落 + 备用段 + Q&A 弹药) | 180s |
-| [`pitch-lines.md`](pitch-lines.md) | Demo 金句卡 — 每个 prompt 节点一句可上台直接念的话 | 速查 |
-| [`demo-script.md`](demo-script.md) | 完整 demo 脚本, 含每帧讲解 + 备选路径 | 3 min |
+| 文件 | 用途 |
+|---|---|
+| [`pitch-3min.md`](pitch-3min.md) | 黑客松现场 **3 分钟讲稿** (计时段落 + 备用段 + Q&A 弹药) |
+| [`pitch-lines.md`](pitch-lines.md) | **Demo 金句卡** — 每个 prompt 节点一句可上台直接念的话 (口袋卡) |
+| [`demo-script.md`](demo-script.md) | 早期 demo 流脚本 (背景叙事版) |
+| [`demo-runbook.md`](demo-runbook.md) | **上场前操作手册** — preflight、环境变量、剪贴板预备、剧本演练 |
+| [`architecture/architecture.md`](architecture/architecture.md) | 完整产品架构思考文档 (384 行, 长篇说理) |
 
-**用法建议**: 上场前打开 `pitch-3min.md`, 桌面留 `pitch-lines.md` 当口袋卡。
+**上场前序列**:
+1. 跑 `demo-runbook.md` 里的 preflight (验证全部 API 通)
+2. 桌面留 `pitch-3min.md` 计时讲稿 + `pitch-lines.md` 金句卡
+3. 浏览器预开两个 tab: `localhost:3737` web · 一个 Cursor 窗口准备演 MCP
 
 ---
 
@@ -35,6 +40,7 @@ Web 端布局的 SVG 草图. 直接浏览器或 Finder Quick Look 打开看. 按
 
 | 文件 | 描述 |
 |---|---|
+| [`architecture/architecture.md`](architecture/architecture.md) | **完整架构文档** — Why Council / 数据模型 / 三条链路细节 / 长期演进 |
 | [`architecture/system.svg`](architecture/system.svg) | 系统总览: capture / distill / convene 三条链路 + CLI/MCP/Web 三种入口 |
 | [`architecture/directory-tree.svg`](architecture/directory-tree.svg) | `~/.council/` 文件结构图 — 用户的认知资产长什么样 |
 | [`architecture/prompt-chains.svg`](architecture/prompt-chains.svg) | 11 个 prompt (P1-P11) 的串联关系 — Council 的"思维流水线" |
@@ -47,27 +53,32 @@ Web 端布局的 SVG 草图. 直接浏览器或 Finder Quick Look 打开看. 按
 ```
 docs/
 ├── README.md                              ← 你在这里
-├── pitch-3min.md
-├── pitch-lines.md
-├── demo-script.md
+├── pitch-3min.md                          (现场讲稿)
+├── pitch-lines.md                         (金句卡)
+├── demo-script.md                         (背景叙事版 demo 脚本)
+├── demo-runbook.md                        (上场操作手册 / preflight)
 ├── architecture/
+│   ├── architecture.md                    (完整产品架构文档)
 │   ├── system.svg
 │   ├── directory-tree.svg
 │   ├── prompt-chains.svg
 │   └── strategic-map.svg
-└── design/
-    ├── web-layout-resting.svg
-    └── web-layout-convening.svg
+├── design/
+│   ├── web-layout-resting.svg
+│   └── web-layout-convening.svg
+└── _archive/                              ← 历史 dev journal, 不上场用
+    ├── BUILD_PLAN.md
+    └── NIGHT-REPORT.md
 ```
+
+仓库根目录现在只剩**用户必须看到**的: `README.md` · `LICENSE` · `package.json` · `bin/` · `dist/` · `src/` · `web/` · `seeds/` · `scripts/`. 其余全部进 `docs/`.
 
 ---
 
-## 🔄 来源说明
+## 🔄 来源 (仅作记录)
 
-- `pitch-3min.md` · 本次会话生成 (2026-04-25 晚上)
-- `pitch-lines.md` · 原 `相关材料/council_pitch_lines.md`
-- `demo-script.md` · 原 `相关材料/council-demo-script.md`
-- `design/web-layout-*.svg` · 本次会话生成
-- `architecture/*.svg` · 早期设计期生成 (从 `相关材料/` 整理过来)
-
-旧的 `相关材料/council-readme.md` README 草稿已删 (本仓库 README.md 取代). git 历史可恢复.
+- 演讲 / demo 材料: 本次会话整理 + 原 `相关材料/`
+- `architecture/architecture.md` · 原根目录 `council-architecture.md`
+- `demo-runbook.md` · 原根目录 `DEMO.md` (Demo 脚本 v2, 含 preflight)
+- `_archive/*` · 早期 dev journal, git 历史保留, 不删但归档不显眼
+- 旧 `相关材料/council-readme.md` README 草稿已删 (根 README.md 取代)
