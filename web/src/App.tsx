@@ -16,7 +16,7 @@ function detectView(): View {
   return "council";
 }
 
-// Single-page app. Read ?mock=1 or ?q= from URL on boot.
+// Single-page app. Read ?mock=1, ?q=, ?run_id= from URL on boot.
 export default function App() {
   const connection = useCouncil((s) => s.connection);
   const runId = useCouncil((s) => s.runId);
@@ -36,39 +36,8 @@ export default function App() {
     return () => window.removeEventListener("popstate", onPop);
   }, []);
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const mock = params.get("mock");
-    const q = params.get("q") ?? "";
-    if (q) setPrefillQ(q);
-    if (mock === "1" && view === "council") {
-      const stop = playMock();
-      return () => stop();
-    }
-    return;
-  }, [view]);
-
-  // When a real convene run starts, attach a socket (only for council view).
-  useEffect(() => {
-    if (view !== "council") return;
-    if (!runId || connection === "mock") return;
-    const sock = new CouncilSocket({ runId });
-    sock.open();
-    return () => sock.close();
-  }, [runId, connection, view]);
-
-  function navigate(next: View) {
-    const url = new URL(window.location.href);
-    if (next === "capture") {
-      url.searchParams.set("view", "capture");
-    } else {
-      url.searchParams.delete("view");
-    }
-    window.history.pushState({}, "", url.toString());
-    setView(next);
-  }
-
   // Kick off a new convene via HTTP.
+  // 必须放在 useEffect 之前定义 (用 useCallback 让引用稳定)
   async function handleConvene(question: string) {
     setQuestion(question);
     reset();
@@ -90,6 +59,67 @@ export default function App() {
       // Hackathon fallback: if backend not up, play the mock so the demo works.
       playMock();
     }
+  }
+
+  // 启动时解析 URL 参数:
+  //   ?mock=1                — 离线播放 fixtures
+  //   ?run_id=<id>&q=<text>  — 已存在的 run, 仅订阅 WS, 不重复发起 (CLI --watch 路径)
+  //   ?q=<text>              — 仅有问题, 自动召集议会 (Jobs moment: 打开链接立刻辩论)
+  //   ?q=<text>&autoconvene=0 — 关闭自动召集 (回到旧行为, 仅预填)
+  useEffect(() => {
+    if (view !== "council") return;
+    const params = new URLSearchParams(window.location.search);
+    const mock = params.get("mock");
+    const q = params.get("q") ?? "";
+    const r = params.get("run_id");
+    const autoconvene = params.get("autoconvene") !== "0";
+
+    if (q) setPrefillQ(q);
+
+    if (mock === "1") {
+      const stop = playMock();
+      return () => stop();
+    }
+
+    // 路径 1: URL 自带 run_id (CLI --watch 路径) — 订阅但不发起
+    if (r && q) {
+      useCouncil.getState().ingest({
+        t: "run.started",
+        run_id: r,
+        verb: "convene",
+        ts: Date.now(),
+        meta: { question: q },
+      });
+      return;
+    }
+
+    // 路径 2: 仅有 ?q= — 自动召集
+    if (q && autoconvene) {
+      handleConvene(q);
+      return;
+    }
+    return;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view]);
+
+  // When a real convene run starts, attach a socket (only for council view).
+  useEffect(() => {
+    if (view !== "council") return;
+    if (!runId || connection === "mock") return;
+    const sock = new CouncilSocket({ runId });
+    sock.open();
+    return () => sock.close();
+  }, [runId, connection, view]);
+
+  function navigate(next: View) {
+    const url = new URL(window.location.href);
+    if (next === "capture") {
+      url.searchParams.set("view", "capture");
+    } else {
+      url.searchParams.delete("view");
+    }
+    window.history.pushState({}, "", url.toString());
+    setView(next);
   }
 
   return (

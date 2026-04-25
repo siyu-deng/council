@@ -25,9 +25,33 @@ const config: Config = {
         },
       },
       fontFamily: {
-        serif: ['"Cormorant Garamond"', '"Noto Serif SC"', "Georgia", "serif"],
-        sans: ['"Inter"', '"Noto Sans SC"', "system-ui", "sans-serif"],
-        mono: ['"JetBrains Mono"', "ui-monospace", "monospace"],
+        // Cormorant 自托管 (latin only); 中文回落到系统宋体
+        serif: [
+          '"Cormorant Garamond"',
+          '"Songti SC"',
+          '"Noto Serif SC"',
+          "Georgia",
+          "serif",
+        ],
+        // 全部系统字体, 不再下载
+        sans: [
+          "-apple-system",
+          "BlinkMacSystemFont",
+          '"Segoe UI"',
+          '"PingFang SC"',
+          '"Hiragino Sans GB"',
+          '"Microsoft YaHei"',
+          "system-ui",
+          "sans-serif",
+        ],
+        mono: [
+          "ui-monospace",
+          "SFMono-Regular",
+          '"SF Mono"',
+          "Menlo",
+          "Monaco",
+          "monospace",
+        ],
       },
       boxShadow: {
         candle:

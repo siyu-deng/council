@@ -5,27 +5,52 @@
 #   1. 如果 pake + Cargo >= 1.78 可用, 用 Pake 打一个真正的 Tauri 应用 (10MB, 原生窗口)
 #   2. 否则 fallback 到 .app bundle + shell launcher (500KB, 自动启动 Bun server + 开浏览器)
 #
-# 两条路都产出同样路径: dist-app/Council.app
+# **重要**: 默认安装到 ~/Applications/Council.app
+# macOS Mojave+ 的 TCC 沙盒会拦截放在 ~/Desktop / ~/Documents / ~/Downloads 下的 .app
+# 访问外部文件 (比如读项目里的 web/dist 或调 Bun) — 表现是 Bun 启动时
+# "An unknown error occurred (Unexpected)" silent error。
+# 装到 ~/Applications/ 这个用户级 Applications 目录就完全不受限。
 #
 # 用法:
-#   bash scripts/make-mac-app.sh          # 自动检测最佳路径
+#   bash scripts/make-mac-app.sh                    # 自动检测最佳路径, 装到 ~/Applications/
 #   bash scripts/make-mac-app.sh --force-fallback   # 跳过 Pake, 直接做 fallback
 #   bash scripts/make-mac-app.sh --force-pake       # 只用 Pake, 失败就失败
+#   bash scripts/make-mac-app.sh --out <dir>        # 自定义输出目录 (注意避开 ~/Desktop)
 
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-OUT="$REPO/dist-app"
-APP="$OUT/Council.app"
+# 默认装到 ~/Applications (用户级 Applications, 创建该目录如不存在)
+OUT="${HOME}/Applications"
 ICON="$REPO/web/public-icon.png"
 
 MODE="auto"
-for arg in "$@"; do
+ARGS=("$@")
+i=0
+while [[ $i -lt ${#ARGS[@]} ]]; do
+  arg="${ARGS[$i]}"
   case "$arg" in
     --force-fallback) MODE="fallback" ;;
     --force-pake) MODE="pake" ;;
+    --out)
+      i=$((i+1))
+      OUT="${ARGS[$i]}"
+      ;;
   esac
+  i=$((i+1))
 done
+APP="$OUT/Council.app"
+mkdir -p "$OUT"
+
+# 警告: ~/Desktop / ~/Documents / ~/Downloads 受 TCC 沙盒限制, .app 在这里启动时
+# 无法访问其他位置的文件 — 装这里几乎肯定不工作。
+case "$OUT" in
+  "$HOME/Desktop"*|"$HOME/Documents"*|"$HOME/Downloads"*)
+    printf "\033[33m⚠ 警告: 输出目录 %s 在 macOS TCC 沙盒受限路径下\033[0m\n" "$OUT" >&2
+    printf "\033[33m  Council.app 启动时可能因权限限制 silent fail (Bun 报 'Unexpected' error)\033[0m\n" >&2
+    printf "\033[33m  推荐用 --out ~/Applications 或 /Applications\033[0m\n" >&2
+    ;;
+esac
 
 mkdir -p "$OUT"
 rm -rf "$APP"
@@ -142,37 +167,63 @@ EOF
   cat > "$APP/Contents/MacOS/Council" <<EOF
 #!/usr/bin/env bash
 set -e
+# 把所有输出重定向到日志文件 (用 exec 在脚本一开始就生效, 子进程自动继承)
+# 实测: 用 'cmd >log 2>&1 &' 这种 per-command 重定向 + & 背景化, 在 .app launchd 上下文里
+# 会让 Bun 出现 "Unexpected" silent error。用 exec 重定向就没问题。
+exec >/tmp/council.live.log 2>&1
+echo "=== Council.app launcher \$(date) ==="
+
 REPO="$REPO"
 PORT=\${COUNCIL_LIVE_PORT:-3737}
 
-# 1. 确保 bun 可用
-BUN="\$HOME/.bun/bin/bun"
-if [[ ! -x "\$BUN" ]]; then
+# macOS 通过 launchd 启动 .app 时, ulimit -n 默认是 256, Bun 在 fd 紧张时表现古怪。
+# 提到 65536, 失败再降到 10240; 都失败也不致命。
+ulimit -n 524288 2>/dev/null || ulimit -n 65536 2>/dev/null || ulimit -n 10240 2>/dev/null || true
+echo "ulimit -n: \$(ulimit -Sn)"
+
+# 1. 确保 bun 可用 (尝试 ~/.bun, /opt/homebrew, /usr/local 三个常见路径)
+BUN=""
+for cand in "\$HOME/.bun/bin/bun" "/opt/homebrew/bin/bun" "/usr/local/bin/bun"; do
+  if [[ -x "\$cand" ]]; then BUN="\$cand"; break; fi
+done
+if [[ -z "\$BUN" ]]; then
   BUN="\$(command -v bun 2>/dev/null || true)"
 fi
 if [[ -z "\$BUN" ]]; then
-  osascript -e 'display alert "Bun 未安装" message "请先安装 Bun: https://bun.sh\nthen reopen Council.app"'
+  osascript -e 'display alert "Bun 未安装" message "请先安装 Bun: https://bun.sh\\n然后重新打开 Council.app"'
   exit 1
 fi
+echo "bun: \$BUN"
 
 # 2. 如果端口被占 (server 已在跑) 直接开浏览器
 if nc -z 127.0.0.1 \$PORT 2>/dev/null; then
+  echo "port \$PORT in use, just opening browser"
   open "http://127.0.0.1:\$PORT/"
   exit 0
 fi
 
 # 3. 否则启动 server, 等就绪, 再开浏览器
 cd "\$REPO"
-nohup "\$BUN" run src/server/live.ts >/tmp/council.live.log 2>&1 &
+echo "starting bun..."
+"\$BUN" run src/server/live.ts &
 SERVER_PID=\$!
-for i in {1..30}; do
+echo "server pid=\$SERVER_PID"
+
+# 等最多 5 秒
+for i in {1..50}; do
   if nc -z 127.0.0.1 \$PORT 2>/dev/null; then break; fi
-  sleep 0.15
+  sleep 0.1
 done
+if ! nc -z 127.0.0.1 \$PORT 2>/dev/null; then
+  echo "server failed to bind \$PORT"
+  osascript -e 'display alert "Council 启动失败" message "查看 /tmp/council.live.log 看错误信息"'
+  exit 1
+fi
+echo "port up, opening browser"
 open "http://127.0.0.1:\$PORT/"
 
 # 4. 保持前台运行 (否则 LaunchServices 会认为 app 已退出)
-trap "kill \$SERVER_PID 2>/dev/null" EXIT TERM
+trap "kill \$SERVER_PID 2>/dev/null" EXIT TERM INT
 wait \$SERVER_PID
 EOF
   chmod +x "$APP/Contents/MacOS/Council"
