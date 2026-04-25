@@ -11,6 +11,9 @@ dist/
 # local dev state
 .council-dev/
 
+# IDE/preview tooling (Claude Preview, Claude Code)
+.claude/
+
 # Mac app build output (regenerate via scripts/make-mac-app.sh)
 dist-app/
 
