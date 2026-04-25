@@ -2,10 +2,39 @@
 
 > Your thinking, round-tabled.
 >
-> 不是让 AI 变成你, 是把你的思考外化成可召集的结构。CLI 负责数据, 网页负责在场。
+> ChatGPT 让 AI 认识全人类。**Council 让 AI 认识你。**
+>
+> 不是让 AI 变成你, 是把你的思考外化成可召集的结构 — 然后通过 MCP 把这套结构暴露给任何 LLM 客户端 (Claude Desktop / Cursor / Cherry Studio)。
 
-**Author**: 墨宇 (Siyu Deng) · **Status**: EvoTavern Beijing Hackathon · v0.2 (L1 + L2)
-**Stack**: Bun + TypeScript · MCP Protocol · Claude Haiku 4.5 · Vite + React + Tailwind · (Pake for macOS)
+**Author**: 墨宇 (Siyu Deng) · **License**: MIT · **Status**: EvoTavern Hackathon 2026
+**Stack**: Node 20+ · TypeScript · MCP Protocol · Anthropic Claude (Haiku 4.5) · Vite + React + Tailwind
+
+---
+
+## 5 分钟跑起来
+
+```bash
+# 1. 安装 (需要 Node 20+)
+npm install -g @siyu-deng/council
+
+# 2. 准备 API key
+echo "ANTHROPIC_API_KEY=sk-ant-..." > ~/.council.env
+
+# 3. 初始化
+council init
+
+# 4. 体验三条主链路
+council capture --file your-claude-chat.md      # 摄入一段思考对话
+council distill --auto                           # 蒸馏出 self persona
+council convene "我该不该接这个外包"             # 召集议会
+council refine self:reframe-before-execute      # 让已有 persona 吸收新洞见
+
+# 5. MCP 接入 Claude Desktop / Cursor
+council export --mcp
+# 把打印出的配置贴进 claude_desktop_config.json / .cursor/mcp.json → 重启客户端
+```
+
+> ⚠️ **`council live`（网页圆桌可视化）目前需要 Bun runtime** — 因为 live server 用了 `Bun.serve()` 提供低延迟的 SSE。如需用网页 GUI，请先 `brew install bun` 或参考 [bun.sh](https://bun.sh)。CLI / MCP 部分全部跑在 Node 上。
 
 ---
 
@@ -112,11 +141,11 @@ Markdown + YAML + JSONL, 没有数据库。用户拥有完全控制权。
 ```bash
 # 一次性试水, 不全局装
 export ANTHROPIC_API_KEY=sk-ant-...
-npx @siyu/council@latest init
-npx @siyu/council@latest convene "我该不该 X"
+npx @siyu-deng/council@latest init
+npx @siyu-deng/council@latest convene "我该不该 X"
 
 # 或全局装 (装一次, 之后命令直接是 council)
-npm i -g @siyu/council
+npm i -g @siyu-deng/council
 council init
 council convene "我该不该 X"
 ```
@@ -184,7 +213,7 @@ bun preflight              # 全绿 = 可以上场
 **Claude Code (一行命令)**:
 
 ```bash
-claude mcp add council -e ANTHROPIC_API_KEY=sk-ant-... -- npx -y @siyu/council@latest serve
+claude mcp add council -e ANTHROPIC_API_KEY=sk-ant-... -- npx -y @siyu-deng/council@latest serve
 ```
 
 **Claude Desktop / Cursor / Cherry Studio (改 JSON 配置)**:
@@ -194,7 +223,7 @@ claude mcp add council -e ANTHROPIC_API_KEY=sk-ant-... -- npx -y @siyu/council@l
   "mcpServers": {
     "council": {
       "command": "npx",
-      "args": ["-y", "@siyu/council@latest", "serve"],
+      "args": ["-y", "@siyu-deng/council@latest", "serve"],
       "env": { "ANTHROPIC_API_KEY": "sk-ant-..." }
     }
   }

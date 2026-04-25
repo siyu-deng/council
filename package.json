@@ -1,5 +1,5 @@
 {
-  "name": "@siyu/council",
+  "name": "@siyu-deng/council",
   "version": "0.1.0",
   "description": "Council — 你的思考议会。捕获对话, 蒸馏思维 skill, 召集多 persona 辩论。CLI + MCP server, 跨 Claude Desktop / Cursor / Claude Code 通用。",
   "keywords": [
@@ -14,13 +14,27 @@
     "anthropic"
   ],
   "type": "module",
+  "license": "MIT",
+  "author": {
+    "name": "墨宇 (Siyu Deng)",
+    "email": "bozzkopp791@gmail.com"
+  },
+  "homepage": "https://github.com/siyu-deng/council#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/siyu-deng/council.git"
+  },
+  "bugs": {
+    "url": "https://github.com/siyu-deng/council/issues"
+  },
   "bin": {
     "council": "./dist/council.mjs"
   },
   "files": [
     "dist",
     "seeds",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "engines": {
     "node": ">=20"
