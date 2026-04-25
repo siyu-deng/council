@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 1400" width="1280" height="1400" font-family="-apple-system, 'PingFang SC', 'Source Han Sans SC', sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 1180" width="1280" height="1180" font-family="-apple-system, 'PingFang SC', 'Source Han Sans SC', sans-serif">
   <defs>
     <linearGradient id="cardBg" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#1A1815"/>
@@ -8,6 +8,10 @@
       <stop offset="0%" stop-color="#1F1A14"/>
       <stop offset="100%" stop-color="#191510"/>
     </linearGradient>
+    <radialGradient id="fabGlow" cx="50%" cy="50%">
+      <stop offset="0%" stop-color="#E8B563" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#E8B563" stop-opacity="0"/>
+    </radialGradient>
     <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
       <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
       <feOffset dx="0" dy="2"/>
@@ -18,10 +22,14 @@
       <feGaussianBlur stdDeviation="3"/>
       <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
+    <filter id="strongGlow">
+      <feGaussianBlur stdDeviation="6"/>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
   </defs>
 
   <!-- 全屏黑曜石黑 -->
-  <rect width="1280" height="1400" fill="#0E0D0C"/>
+  <rect width="1280" height="1180" fill="#0E0D0C"/>
 
   <!-- ━━━━━━━━━ 顶部 header ━━━━━━━━━ -->
   <rect x="0" y="0" width="1280" height="56" fill="#0E0D0C"/>
@@ -34,13 +42,18 @@
     </circle>
     <text x="14" y="4" font-size="11" fill="#B8895A" letter-spacing="0.5">CROSS-EXAM · 第 2 阶段 · 2/3 完成</text>
   </g>
+  <!-- 折叠/展开全部 -->
+  <g transform="translate(1140, 28)">
+    <rect x="-50" y="-12" width="100" height="24" rx="12" fill="none" stroke="#3A352D" stroke-width="1"/>
+    <text x="0" y="4" text-anchor="middle" font-size="10" fill="#8C8780">▼  全部展开</text>
+  </g>
   <circle cx="1238" cy="28" r="3" fill="#5A5650"/>
   <circle cx="1248" cy="28" r="3" fill="#5A5650"/>
   <circle cx="1258" cy="28" r="3" fill="#5A5650"/>
 
-  <!-- ━━━━━━━━━ 左侧图标栏 (议会态偏暗) ━━━━━━━━━ -->
-  <rect x="0" y="56" width="72" height="1344" fill="#0E0D0C"/>
-  <line x1="72" y1="56" x2="72" y2="1400" stroke="#2A2620" stroke-width="1"/>
+  <!-- ━━━━━━━━━ 左侧图标栏 ━━━━━━━━━ -->
+  <rect x="0" y="56" width="72" height="1124" fill="#0E0D0C"/>
+  <line x1="72" y1="56" x2="72" y2="1180" stroke="#2A2620" stroke-width="1"/>
   <g opacity="0.32">
     <g transform="translate(36, 110)">
       <rect x="-22" y="-22" width="44" height="44" rx="10" fill="none" stroke="#3A352D" stroke-width="1"/>
@@ -69,13 +82,14 @@
     </g>
   </g>
 
-  <!-- ━━━━━━━━━ 主内容区 (left=100, right=1240) ━━━━━━━━━ -->
+  <!-- ━━━━━━━━━ 主内容区 ━━━━━━━━━ -->
 
-  <!-- ─── 1. 议题 + 召集理由 ─── -->
+  <!-- 议题 -->
   <text x="690" y="106" text-anchor="middle" font-family="'Source Han Serif SC', 'Songti SC', Georgia, serif" font-size="24" font-style="italic" fill="#E8B563" letter-spacing="0.5">
     黑客松 5 分钟 demo, 我应该砍掉 MCP 吗?
   </text>
 
+  <!-- 召集理由 -->
   <g transform="translate(100, 138)">
     <rect width="1140" height="58" rx="10" fill="url(#parchment)" stroke="#2A2620" stroke-width="1"/>
     <text x="20" y="22" font-size="10" fill="#B8895A" letter-spacing="1.5">召 集 理 由</text>
@@ -84,20 +98,17 @@
     </text>
   </g>
 
-  <!-- ─── 2. mini roundtable (作为索引/锚点, 不是表演) ─── -->
+  <!-- mini roundtable -->
   <g transform="translate(100, 220)">
     <text x="0" y="0" font-size="10" fill="#5A5650" letter-spacing="1.5">参 会 (3) · 点击头像聚焦该 persona 的所有发言</text>
-    <!-- chair 1: self -->
     <g transform="translate(180, 50)">
       <circle r="32" fill="#1A1815" stroke="#5A5650" stroke-width="1.5"/>
       <text y="6" text-anchor="middle" font-size="20" fill="#A09A8E">◆</text>
       <text x="0" y="56" text-anchor="middle" font-size="10" fill="#A09A8E">self:reframe-before-execute</text>
       <text x="0" y="70" text-anchor="middle" font-size="9" fill="#5A5650">已 statement · 已 cross-exam</text>
-      <!-- check marks -->
       <circle cx="22" cy="-22" r="8" fill="#0E0D0C" stroke="#5A8C5A" stroke-width="1.2"/>
       <path d="M 18 -22 L 21 -19 L 26 -25" stroke="#5A8C5A" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
     </g>
-    <!-- chair 2: jobs (active 当前发言) -->
     <g transform="translate(560, 50)">
       <circle r="40" fill="#221A12" stroke="#E8B563" stroke-width="2" filter="url(#amberGlow)">
         <animate attributeName="r" values="38;42;38" dur="2.2s" repeatCount="indefinite"/>
@@ -106,7 +117,6 @@
       <text x="0" y="64" text-anchor="middle" font-size="10" fill="#E8B563">mentors:jobs</text>
       <text x="0" y="78" text-anchor="middle" font-size="9" fill="#B8895A">正在 cross-exam · score 0.82</text>
     </g>
-    <!-- chair 3: devils -->
     <g transform="translate(940, 50)">
       <circle r="32" fill="#1A1815" stroke="#5A5650" stroke-width="1.5"/>
       <text y="8" text-anchor="middle" font-size="20" fill="#A09A8E">◇</text>
@@ -115,7 +125,6 @@
       <circle cx="22" cy="-22" r="8" fill="#0E0D0C" stroke="#5A8C5A" stroke-width="1.2"/>
       <path d="M 18 -22 L 21 -19 L 26 -25" stroke="#5A8C5A" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
     </g>
-    <!-- 当前 cross-exam 关系: jobs → reframe + devils -->
     <line x1="552" y1="50" x2="212" y2="50" stroke="#E8B563" stroke-width="1" stroke-dasharray="3 4" opacity="0.55">
       <animate attributeName="stroke-dashoffset" values="0;-14" dur="1.6s" repeatCount="indefinite"/>
     </line>
@@ -124,119 +133,77 @@
     </line>
   </g>
 
-  <!-- ─── PHASE: STATEMENTS ─── -->
-  <line x1="100" y1="350" x2="380" y2="350" stroke="#3A352D" stroke-width="1"/>
-  <text x="690" y="354" text-anchor="middle" font-size="11" fill="#8C8780" letter-spacing="3">P H A S E   1   ·   S T A T E M E N T S</text>
-  <line x1="1000" y1="350" x2="1240" y2="350" stroke="#3A352D" stroke-width="1"/>
-
-  <!-- statement 1: self:reframe -->
-  <g transform="translate(100, 376)">
-    <rect width="1140" height="92" rx="10" fill="url(#cardBg)" stroke="#2A2620" stroke-width="1" filter="url(#softShadow)"/>
-    <line x1="0" y1="0" x2="0" y2="92" stroke="#5A8C5A" stroke-width="3"/>
-    <!-- portrait -->
-    <g transform="translate(34, 30)">
-      <circle r="14" fill="#1A1815" stroke="#5A5650" stroke-width="1.2"/>
-      <text y="4" text-anchor="middle" font-size="11" fill="#A09A8E">◆</text>
+  <!-- ─────── PHASE 1 · STATEMENTS (折叠态) ─────── -->
+  <g transform="translate(100, 360)" id="phase-statements-collapsed">
+    <rect width="1140" height="46" rx="8" fill="#13110E" stroke="#2A2620" stroke-width="1"/>
+    <!-- 折叠箭头 -->
+    <text x="20" y="29" font-size="13" fill="#5A8C5A">▶</text>
+    <!-- phase 名 -->
+    <text x="48" y="28" font-size="11" fill="#A09A8E" letter-spacing="2.5">PHASE 1  ·  STATEMENTS</text>
+    <!-- status badge -->
+    <g transform="translate(264, 18)">
+      <rect width="58" height="18" rx="9" fill="none" stroke="#5A8C5A" stroke-width="0.8"/>
+      <text x="29" y="13" text-anchor="middle" font-size="9" fill="#5A8C5A">DONE</text>
     </g>
-    <!-- name -->
-    <text x="62" y="26" font-size="12" fill="#D8CFC4" font-weight="500">self:reframe-before-execute</text>
-    <text x="270" y="26" font-size="10" fill="#5A5650">statement</text>
-    <text x="1118" y="26" text-anchor="end" font-size="10" fill="#5A5650">15:42:08</text>
-    <!-- content -->
-    <text x="62" y="50" font-size="12" fill="#A09A8E" font-style="italic">
-      "你的真实约束是 5 分钟内传达一个 idea, 不是讲清楚整个产品. MCP 在这个尺度下不可解释."
-    </text>
-    <text x="62" y="72" font-size="11" fill="#6B655A">
-      → 反对"通过架构深度证明价值", 主张"通过故事的清晰度赢得评委"
-    </text>
+    <!-- 折叠提示 -->
+    <text x="340" y="28" font-size="10" fill="#5A5650" font-style="italic">3 张已收起 · 点击 ▶ 展开重读</text>
+    <!-- 简要预览 (一行字) -->
+    <text x="1118" y="28" text-anchor="end" font-size="10" fill="#6B655A">◆ reframe  ●jobs  ◇devils  ✓ all</text>
   </g>
 
-  <!-- statement 2: mentors:jobs -->
-  <g transform="translate(100, 480)">
-    <rect width="1140" height="92" rx="10" fill="url(#cardBg)" stroke="#2A2620" stroke-width="1" filter="url(#softShadow)"/>
-    <line x1="0" y1="0" x2="0" y2="92" stroke="#E8B563" stroke-width="3"/>
-    <g transform="translate(34, 30)">
-      <circle r="14" fill="#221A12" stroke="#E8B563" stroke-width="1.4"/>
-      <text y="5" text-anchor="middle" font-size="13" fill="#E8B563" font-family="Georgia, serif" font-style="italic">J</text>
+  <!-- ─────── PHASE 2 · CROSS-EXAM (展开 / 当前) ─────── -->
+  <g transform="translate(100, 426)" id="phase-cross-header">
+    <rect width="1140" height="46" rx="8" fill="#1A1612" stroke="#E8B563" stroke-width="1"/>
+    <text x="20" y="30" font-size="13" fill="#E8B563">▼</text>
+    <text x="48" y="28" font-size="11" fill="#E8B563" letter-spacing="2.5">PHASE 2  ·  CROSS-EXAMINATION</text>
+    <g transform="translate(326, 18)">
+      <rect width="80" height="18" rx="9" fill="none" stroke="#E8B563" stroke-width="0.8"/>
+      <text x="40" y="13" text-anchor="middle" font-size="9" fill="#E8B563">CURRENT 2/3</text>
     </g>
-    <text x="62" y="26" font-size="12" fill="#D8CFC4" font-weight="500">mentors:jobs</text>
-    <text x="170" y="26" font-size="10" fill="#5A5650">statement</text>
-    <text x="1118" y="26" text-anchor="end" font-size="10" fill="#5A5650">15:42:31</text>
-    <text x="62" y="50" font-size="12" fill="#A09A8E" font-style="italic">
-      "Demo 阶段就该只做一件事——让评委记住 一个 清晰的 \"为什么这个问题值得解决\"."
-    </text>
-    <text x="62" y="72" font-size="11" fill="#6B655A">
-      → 主张极致减法, 留 1 个核心命令 + 1 个故事, 砍其余 6 个 + MCP
-    </text>
-  </g>
-
-  <!-- statement 3: roles:devils -->
-  <g transform="translate(100, 584)">
-    <rect width="1140" height="92" rx="10" fill="url(#cardBg)" stroke="#2A2620" stroke-width="1" filter="url(#softShadow)"/>
-    <line x1="0" y1="0" x2="0" y2="92" stroke="#C8845A" stroke-width="3"/>
-    <g transform="translate(34, 30)">
-      <circle r="14" fill="#1A1815" stroke="#5A5650" stroke-width="1.2"/>
-      <text y="5" text-anchor="middle" font-size="11" fill="#A09A8E">◇</text>
+    <!-- 实时光点 -->
+    <g transform="translate(1100, 23)">
+      <circle r="4" fill="#E8B563">
+        <animate attributeName="opacity" values="0.4;1;0.4" dur="1.4s" repeatCount="indefinite"/>
+      </circle>
+      <text x="-10" y="4" text-anchor="end" font-size="9" fill="#E8B563" letter-spacing="0.5">LIVE</text>
     </g>
-    <text x="62" y="26" font-size="12" fill="#D8CFC4" font-weight="500">roles:devils-advocate</text>
-    <text x="220" y="26" font-size="10" fill="#5A5650">statement</text>
-    <text x="1118" y="26" text-anchor="end" font-size="10" fill="#5A5650">15:42:55</text>
-    <text x="62" y="50" font-size="12" fill="#A09A8E" font-style="italic">
-      "你们都假设 MCP 在 5 分钟内是可解释的——我怀疑它不是. 评委没 agent 心智模型, 30 秒讲不清."
-    </text>
-    <text x="62" y="72" font-size="11" fill="#6B655A">
-      → 站对立面: 不是"留不留", 是"评委构成不验证就是赌博"
-    </text>
   </g>
-
-  <!-- ─── PHASE: CROSS-EXAM ─── -->
-  <line x1="100" y1="708" x2="380" y2="708" stroke="#3A352D" stroke-width="1"/>
-  <text x="690" y="712" text-anchor="middle" font-size="11" fill="#E8B563" letter-spacing="3">P H A S E   2   ·   C R O S S - E X A M I N A T I O N</text>
-  <line x1="1000" y1="708" x2="1240" y2="708" stroke="#3A352D" stroke-width="1"/>
 
   <!-- cross-exam 1: reframe → jobs -->
-  <g transform="translate(100, 736)">
+  <g transform="translate(100, 488)">
     <rect width="1140" height="98" rx="10" fill="url(#cardBg)" stroke="#2A2620" stroke-width="1" filter="url(#softShadow)"/>
-    <!-- 攻击者 portrait -->
     <g transform="translate(34, 30)">
       <circle r="14" fill="#1A1815" stroke="#5A5650" stroke-width="1.2"/>
       <text y="4" text-anchor="middle" font-size="11" fill="#A09A8E">◆</text>
     </g>
-    <!-- 箭头 -->
     <g transform="translate(70, 30)">
       <path d="M 0 0 L 24 0" stroke="#E8B563" stroke-width="1.5"/>
       <path d="M 18 -4 L 24 0 L 18 4" stroke="#E8B563" stroke-width="1.5" fill="none"/>
     </g>
-    <!-- 被攻击者 portrait -->
     <g transform="translate(110, 30)">
       <circle r="14" fill="#221A12" stroke="#E8B563" stroke-width="1.2"/>
       <text y="5" text-anchor="middle" font-size="13" fill="#E8B563" font-family="Georgia, serif" font-style="italic">J</text>
     </g>
-    <!-- 头部信息 -->
     <text x="140" y="26" font-size="12" fill="#D8CFC4" font-weight="500">self:reframe  挑战  mentors:jobs</text>
     <text x="370" y="26" font-size="10" fill="#5A5650">cross-exam</text>
     <text x="1118" y="26" text-anchor="end" font-size="10" fill="#5A5650">15:43:18</text>
-    <!-- 挑战内容 -->
     <text x="140" y="50" font-size="12" fill="#A09A8E" font-style="italic">
       "Jobs 在用消费品发布会逻辑套黑客松——这不是同一种观众. 砍 MCP 是用错了模板."
     </text>
-    <!-- 关键反问 -->
     <text x="140" y="78" font-size="11" fill="#B8895A">
       逼问: "你的评委里多少人是技术合伙人 / AI 投资人 / 开发者? 你不知道, 那现在怎么决定砍?"
     </text>
   </g>
 
-  <!-- cross-exam 2: jobs → reframe + devils (双向) -->
-  <g transform="translate(100, 850)">
+  <!-- cross-exam 2: jobs → reframe + devils (LIVE) -->
+  <g transform="translate(100, 602)">
     <rect width="1140" height="120" rx="10" fill="url(#cardBg)" stroke="#E8B563" stroke-width="1.2" filter="url(#softShadow)"/>
-    <!-- 'live' 指示 -->
     <g transform="translate(1118, 18)">
       <circle r="3" fill="#E8B563">
         <animate attributeName="opacity" values="0.4;1;0.4" dur="1.4s" repeatCount="indefinite"/>
       </circle>
       <text x="-4" y="4" text-anchor="end" font-size="9" fill="#E8B563" letter-spacing="0.5">LIVE · streaming</text>
     </g>
-    <!-- portrait jobs (active) -->
     <g transform="translate(34, 30)">
       <circle r="16" fill="#221A12" stroke="#E8B563" stroke-width="1.6" filter="url(#amberGlow)"/>
       <text y="6" text-anchor="middle" font-size="14" fill="#E8B563" font-family="Georgia, serif" font-style="italic">J</text>
@@ -245,7 +212,6 @@
       <path d="M 0 0 L 24 0" stroke="#E8B563" stroke-width="1.5"/>
       <path d="M 18 -4 L 24 0 L 18 4" stroke="#E8B563" stroke-width="1.5" fill="none"/>
     </g>
-    <!-- 双 target portraits -->
     <g transform="translate(114, 22)">
       <circle r="11" fill="#1A1815" stroke="#5A5650" stroke-width="1"/>
       <text y="3" text-anchor="middle" font-size="9" fill="#A09A8E">◆</text>
@@ -265,14 +231,13 @@
     <text x="170" y="92" font-size="11" fill="#B8895A">
       逼问: "如果有技术评委想深入了解, 是用 30 秒讲不清的 MCP, 还是 5 分钟讲透 1 个故事后 Q&amp;A 再展开?"
     </text>
-    <!-- 流式光标 -->
     <rect x="1100" y="86" width="6" height="14" fill="#E8B563">
       <animate attributeName="opacity" values="0;1;0" dur="0.9s" repeatCount="indefinite"/>
     </rect>
   </g>
 
   <!-- cross-exam 3: 等待 -->
-  <g transform="translate(100, 986)">
+  <g transform="translate(100, 738)">
     <rect width="1140" height="64" rx="10" fill="#0E0D0C" stroke="#2A2620" stroke-width="1" stroke-dasharray="3 5"/>
     <g transform="translate(34, 30)">
       <circle r="14" fill="#0E0D0C" stroke="#3A352D" stroke-width="1"/>
@@ -291,26 +256,23 @@
     </text>
   </g>
 
-  <!-- ─── PHASE: SYNTHESIS (待) ─── -->
-  <line x1="100" y1="1080" x2="380" y2="1080" stroke="#2A2620" stroke-width="1"/>
-  <text x="690" y="1084" text-anchor="middle" font-size="11" fill="#3A352D" letter-spacing="3">P H A S E   3   ·   S Y N T H E S I S</text>
-  <line x1="1000" y1="1080" x2="1240" y2="1080" stroke="#2A2620" stroke-width="1"/>
-
-  <g transform="translate(100, 1108)">
-    <rect width="1140" height="160" rx="10" fill="#0E0D0C" stroke="#2A2620" stroke-width="1" stroke-dasharray="3 5"/>
-    <text x="20" y="32" font-size="11" fill="#3A352D" letter-spacing="1.5">⚖   待 综 合</text>
-    <text x="20" y="60" font-size="11" fill="#3A352D">·  共识</text>
-    <text x="20" y="80" font-size="11" fill="#3A352D">·  仍存分歧</text>
-    <text x="20" y="100" font-size="11" fill="#3A352D">·  如果今天必须决定</text>
-    <text x="20" y="120" font-size="11" fill="#3A352D">·  本次议会暴露的新思考模式</text>
-    <text x="20" y="146" font-size="10" fill="#3A352D" font-style="italic">将在所有 cross-exam 完成后由 P6 自动生成</text>
+  <!-- ─────── PHASE 3 · SYNTHESIS (折叠 / 待) ─────── -->
+  <g transform="translate(100, 822)" id="phase-synth-collapsed">
+    <rect width="1140" height="46" rx="8" fill="#13110E" stroke="#2A2620" stroke-width="1" stroke-dasharray="3 5"/>
+    <text x="20" y="30" font-size="13" fill="#3A352D">▶</text>
+    <text x="48" y="28" font-size="11" fill="#5A5650" letter-spacing="2.5">PHASE 3  ·  SYNTHESIS</text>
+    <g transform="translate(264, 18)">
+      <rect width="64" height="18" rx="9" fill="none" stroke="#3A352D" stroke-width="0.8"/>
+      <text x="32" y="13" text-anchor="middle" font-size="9" fill="#5A5650">PENDING</text>
+    </g>
+    <text x="346" y="28" font-size="10" fill="#3A352D" font-style="italic">所有 cross-exam 完成后, P6 自动综合 (共识 / 分歧 / 决定 / 新洞察)</text>
   </g>
 
   <!-- ─── 底部输入框 (锁定) ─── -->
-  <g transform="translate(100, 1296)">
+  <g transform="translate(100, 906)">
     <rect width="1140" height="76" rx="14" fill="#0E0D0C" stroke="#2A2620" stroke-width="1" stroke-dasharray="2 4"/>
     <text x="24" y="32" font-size="14" fill="#3A352D" font-style="italic">议会进行中, 输入框已锁. 等待 synthesis 完成...</text>
-    <text x="24" y="54" font-size="10" fill="#3A352D">⌘. 中断  ·  ESC 切回 default  ·  ↓ 滚动跟随</text>
+    <text x="24" y="54" font-size="10" fill="#3A352D">⌘. 中断  ·  ESC 切回 default  ·  ↓ 滚动跟随  ·  ⌘1 / ⌘2 / ⌘3 跳 phase</text>
     <g transform="translate(1108, 38)">
       <circle r="5" cx="-24" cy="0" fill="#5A8C5A"/>
       <circle r="5" cx="-8" cy="0" fill="#E8B563"/>
@@ -318,10 +280,82 @@
     </g>
   </g>
 
-  <!-- 阶段标识 (角标) -->
-  <text x="100" y="60" text-anchor="start" font-size="9" fill="#3A352D" letter-spacing="2">CONVENE · TRACE VIEW (无信息丢失)</text>
+  <!-- 角标 -->
+  <text x="100" y="60" text-anchor="start" font-size="9" fill="#3A352D" letter-spacing="2">CONVENE · TRACE VIEW · 折叠 + 跳转</text>
 
   <!-- 底部状态 -->
-  <text x="100" y="1390" font-size="10" fill="#3A352D">P3 ✓ summon  ·  P4 ✓ statements (3/3)  ·  P5 cross-exam (2/3)  ·  P6 待</text>
-  <text x="1240" y="1390" text-anchor="end" font-size="10" fill="#3A352D">~/.council/transcripts/2026-04-25-黑客松-demo-砍-mcp.md · stream-active</text>
+  <text x="100" y="1170" font-size="10" fill="#3A352D">P3 ✓  ·  P4 ✓ statements (3/3)  ·  P5 cross-exam (2/3 LIVE)  ·  P6 待</text>
+  <text x="1240" y="1170" text-anchor="end" font-size="10" fill="#3A352D">~/.council/transcripts/2026-04-25-黑客松-demo-砍-mcp.md</text>
+
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <!-- ━━━ 右下角悬浮球 (展开态) FAB ━━━ -->
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+
+  <!-- 浮起的 menu (从 fab 上方展开) -->
+  <g transform="translate(1200, 740)">
+    <!-- 半透明面板 -->
+    <rect x="-208" y="0" width="208" height="262" rx="14" fill="#15130F" stroke="#3A352D" stroke-width="1" filter="url(#softShadow)"/>
+
+    <!-- 标题 -->
+    <text x="-188" y="24" font-size="9" fill="#5A5650" letter-spacing="2">QUICK NAV · 跳到 Phase</text>
+
+    <!-- pill 1: STATEMENTS done -->
+    <g transform="translate(-188, 42)">
+      <rect width="172" height="46" rx="9" fill="none" stroke="#3A352D" stroke-width="1"/>
+      <!-- check -->
+      <circle cx="20" cy="23" r="9" fill="#0E0D0C" stroke="#5A8C5A" stroke-width="1.2"/>
+      <path d="M 16 23 L 19 26 L 24 20" stroke="#5A8C5A" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="38" y="20" font-size="10" fill="#A09A8E" letter-spacing="1.5">PHASE 1</text>
+      <text x="38" y="36" font-size="11" fill="#D8CFC4">Statements · 3 done</text>
+    </g>
+
+    <!-- pill 2: CROSS-EXAM (current) -->
+    <g transform="translate(-188, 96)">
+      <rect width="172" height="46" rx="9" fill="#1A1612" stroke="#E8B563" stroke-width="1.2"/>
+      <!-- live dot -->
+      <circle cx="20" cy="23" r="5" fill="#E8B563">
+        <animate attributeName="opacity" values="0.4;1;0.4" dur="1.4s" repeatCount="indefinite"/>
+      </circle>
+      <text x="38" y="20" font-size="10" fill="#E8B563" letter-spacing="1.5">PHASE 2  ·  CURRENT</text>
+      <text x="38" y="36" font-size="11" fill="#D8CFC4">Cross-exam · 2/3</text>
+    </g>
+
+    <!-- pill 3: SYNTHESIS pending -->
+    <g transform="translate(-188, 150)">
+      <rect width="172" height="46" rx="9" fill="none" stroke="#3A352D" stroke-width="1" stroke-dasharray="3 3"/>
+      <circle cx="20" cy="23" r="9" fill="none" stroke="#3A352D" stroke-width="1.2"/>
+      <text x="20" y="27" text-anchor="middle" font-size="11" fill="#3A352D">3</text>
+      <text x="38" y="20" font-size="10" fill="#5A5650" letter-spacing="1.5">PHASE 3</text>
+      <text x="38" y="36" font-size="11" fill="#5A5650">Synthesis · pending</text>
+    </g>
+
+    <!-- 分隔线 -->
+    <line x1="-188" y1="208" x2="-16" y2="208" stroke="#2A2620" stroke-width="1"/>
+
+    <!-- 折叠/展开 全部 -->
+    <g transform="translate(-188, 220)">
+      <text x="0" y="14" font-size="11" fill="#8C8780">▼  展开全部 phase</text>
+      <text x="0" y="32" font-size="11" fill="#8C8780">▶  折叠全部 phase</text>
+    </g>
+  </g>
+
+  <!-- FAB 主球 -->
+  <g transform="translate(1196, 1024)">
+    <!-- 外发光 -->
+    <circle r="44" fill="url(#fabGlow)"/>
+    <!-- 主球 -->
+    <circle r="32" fill="#E8B563" filter="url(#strongGlow)"/>
+    <!-- icon: 三段刻度 (代表 3 phase) -->
+    <line x1="-12" y1="-4" x2="12" y2="-4" stroke="#0E0D0C" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="-12" y1="2" x2="12" y2="2" stroke="#0E0D0C" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="-12" y1="8" x2="6" y2="8" stroke="#0E0D0C" stroke-width="2.5" stroke-linecap="round"/>
+    <!-- 当前指示 (右侧小点) -->
+    <circle cx="14" cy="2" r="3" fill="#0E0D0C"/>
+  </g>
+  <text x="1196" y="1078" text-anchor="middle" font-size="9" fill="#5A5650" letter-spacing="1">PHASE NAV</text>
+
+  <!-- 注释提示 (浅说明) -->
+  <text x="990" y="1018" text-anchor="end" font-size="9" fill="#3A352D" font-style="italic">
+    点击悬浮球 → 跳到任意 phase / 折叠全部
+  </text>
 </svg>
