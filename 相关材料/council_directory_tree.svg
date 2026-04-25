@@ -1,0 +1,242 @@
+<svg width="100%" viewBox="0 0 1200 1080" role="img" xmlns="http://www.w3.org/2000/svg" font-family="'Anthropic Sans', -apple-system, system-ui, 'Segoe UI', sans-serif">
+<title>Council 目录结构 · 代码 + 数据</title>
+<desc>左侧项目仓库 (代码), 右侧用户运行时 (数据), 通过 council 命令读写</desc>
+
+<!-- ─── Title ─── -->
+<text x="600" y="40" text-anchor="middle" font-size="18" font-weight="600" fill="#141413">Council 目录结构</text>
+<text x="600" y="62" text-anchor="middle" font-size="12" fill="#3d3d3a">左 = 代码仓库 · 右 = 你的数据 · 通过 council 命令穿越两边</text>
+
+<!-- ─── Column headers ─── -->
+<g>
+  <rect x="60"  y="90" width="540" height="36" rx="6" fill="#f4f6fa" stroke="#185fa5" stroke-width="0.5"/>
+  <text x="80"  y="113" font-size="13" font-weight="600" fill="#0c447c">📦  ~/Desktop/councli/</text>
+  <text x="430" y="113" font-size="11" fill="#6b6b66" text-anchor="end">项目代码 · git 跟踪</text>
+
+  <rect x="620" y="90" width="540" height="36" rx="6" fill="#fbf8f1" stroke="#a06820" stroke-width="0.5"/>
+  <text x="640" y="113" font-size="13" font-weight="600" fill="#7a4f15">🏠  ~/.council/</text>
+  <text x="980" y="113" font-size="11" fill="#6b6b66" text-anchor="end">你的数据 · git 不跟踪</text>
+</g>
+
+<!-- ═══════════════════════════════ -->
+<!-- LEFT: project tree              -->
+<!-- ═══════════════════════════════ -->
+<g font-family="'SF Mono', 'Consolas', monospace" font-size="12" fill="#141413">
+
+  <!-- bin/ -->
+  <text x="80" y="160">📁 bin/</text>
+  <text x="120" y="180">├── council.ts</text>
+  <text x="430" y="180" font-size="10" fill="#6b6b66" font-family="'Anthropic Sans', sans-serif" text-anchor="end">CLI 入口 · commander 注册所有命令</text>
+
+  <!-- src/ -->
+  <text x="80" y="210">📁 src/</text>
+
+  <!-- src/commands/ -->
+  <text x="120" y="232">├── 📁 commands/</text>
+  <text x="430" y="232" font-size="10" fill="#6b6b66" font-family="'Anthropic Sans', sans-serif" text-anchor="end">每个用户命令的入口编排逻辑</text>
+  <g font-size="11" fill="#3d3d3a">
+    <text x="160" y="252">│   ├── init.ts</text>
+    <text x="160" y="270">│   ├── capture.ts</text>
+    <text x="160" y="288">│   ├── distill.ts</text>
+    <text x="160" y="306">│   ├── convene.ts</text>
+    <text x="160" y="324">│   ├── persona.ts</text>
+    <text x="160" y="342">│   ├── feedback.ts</text>
+    <text x="160" y="360">│   ├── evolve.ts</text>
+    <text x="160" y="378">│   ├── merge.ts</text>
+    <text x="160" y="396" font-weight="700" fill="#7a4f15">│   ├── refine.ts  ★</text>
+    <text x="430" y="396" font-size="10" font-weight="600" fill="#a06820" font-family="'Anthropic Sans', sans-serif" text-anchor="end">链路 C 反哺 · 新增</text>
+    <text x="160" y="414">│   ├── export.ts</text>
+    <text x="160" y="432">│   └── serve.ts</text>
+    <text x="430" y="432" font-size="10" fill="#6b6b66" font-family="'Anthropic Sans', sans-serif" text-anchor="end">MCP server (导出后给 Claude Desktop 用)</text>
+  </g>
+
+  <!-- src/engine/ -->
+  <text x="120" y="458">├── 📁 engine/</text>
+  <text x="430" y="458" font-size="10" fill="#6b6b66" font-family="'Anthropic Sans', sans-serif" text-anchor="end">领域逻辑 · 跨命令复用</text>
+  <g font-size="11" fill="#3d3d3a">
+    <text x="160" y="478">│   ├── convene.ts</text>
+    <text x="430" y="478" font-size="10" fill="#6b6b66" font-family="'Anthropic Sans', sans-serif" text-anchor="end">议会主流程 P3→P4→P5→P6 编排</text>
+    <text x="160" y="496">│   ├── distill.ts</text>
+    <text x="430" y="496" font-size="10" fill="#6b6b66" font-family="'Anthropic Sans', sans-serif" text-anchor="end">蒸馏主流程 + state 管理</text>
+    <text x="160" y="514">│   ├── events.ts</text>
+    <text x="160" y="532">│   ├── persona-visual.ts</text>
+    <text x="160" y="550">│   └── render.ts</text>
+  </g>
+
+  <!-- src/prompts/ -->
+  <text x="120" y="576">├── 📁 prompts/</text>
+  <text x="430" y="576" font-size="10" fill="#6b6b66" font-family="'Anthropic Sans', sans-serif" text-anchor="end">所有 LLM 调用的提示词 + JSON Schema</text>
+  <g font-size="11" fill="#3d3d3a">
+    <text x="160" y="596">│   ├── P1-identify-highlights.ts</text>
+    <text x="430" y="596" font-size="10" fill="#6b6b66" font-family="'Anthropic Sans', sans-serif" text-anchor="end">从对话挑高光</text>
+    <text x="160" y="614">│   ├── P2-forge-persona.ts</text>
+    <text x="430" y="614" font-size="10" fill="#6b6b66" font-family="'Anthropic Sans', sans-serif" text-anchor="end">把高光锻造成 persona</text>
+    <text x="160" y="632">│   ├── P3-summon.ts</text>
+    <text x="160" y="650">│   ├── P4-statement.ts</text>
+    <text x="160" y="668">│   ├── P5-cross-exam.ts</text>
+    <text x="160" y="686">│   ├── P6-synthesis.ts</text>
+    <text x="160" y="704">│   ├── P7-merge-check.ts</text>
+    <text x="160" y="722">│   ├── P8-synthesize-merge.ts</text>
+    <text x="160" y="740" font-weight="700" fill="#7a4f15">│   ├── P9-refine-persona.ts  ★</text>
+    <text x="430" y="740" font-size="10" font-weight="600" fill="#a06820" font-family="'Anthropic Sans', sans-serif" text-anchor="end">三档判定 reinforce/enrich/contradict</text>
+    <text x="160" y="758">│   └── shared.ts</text>
+  </g>
+
+  <!-- src/core/ -->
+  <text x="120" y="784">├── 📁 core/</text>
+  <text x="430" y="784" font-size="10" fill="#6b6b66" font-family="'Anthropic Sans', sans-serif" text-anchor="end">基础设施 · paths / logger / claude API</text>
+  <g font-size="11" fill="#3d3d3a">
+    <text x="160" y="804">│   ├── claude.ts</text>
+    <text x="160" y="822">│   ├── paths.ts</text>
+    <text x="160" y="840">│   ├── skill-md.ts</text>
+    <text x="430" y="840" font-size="10" fill="#6b6b66" font-family="'Anthropic Sans', sans-serif" text-anchor="end">读写 .md frontmatter (persona/session)</text>
+    <text x="160" y="858">│   └── ...</text>
+  </g>
+
+  <!-- src/mcp/ + server/ -->
+  <text x="120" y="884">├── 📁 mcp/server.ts</text>
+  <text x="430" y="884" font-size="10" fill="#6b6b66" font-family="'Anthropic Sans', sans-serif" text-anchor="end">MCP server 入口 (council serve)</text>
+  <text x="120" y="902">└── 📁 server/live.ts</text>
+  <text x="430" y="902" font-size="10" fill="#6b6b66" font-family="'Anthropic Sans', sans-serif" text-anchor="end">浏览器圆桌 live server (--watch 用)</text>
+
+  <!-- seeds/ -->
+  <text x="80" y="932">📁 seeds/</text>
+  <text x="430" y="932" font-size="10" fill="#6b6b66" font-family="'Anthropic Sans', sans-serif" text-anchor="end">init 时拷给用户的种子文件</text>
+  <text x="120" y="952" font-size="11" fill="#3d3d3a">├── identity.template.md</text>
+  <text x="120" y="970" font-size="11" fill="#3d3d3a">├── config.template.yml</text>
+  <text x="120" y="988" font-size="11" fill="#3d3d3a">└── personas/{mentors, roles}/</text>
+  <text x="430" y="988" font-size="10" fill="#6b6b66" font-family="'Anthropic Sans', sans-serif" text-anchor="end">jobs/munger/naval/devils-advocate/first-customer</text>
+
+  <!-- web/, scripts/, 相关材料/, 自我的材料/ -->
+  <text x="80" y="1018">📁 web/</text>
+  <text x="430" y="1018" font-size="10" fill="#6b6b66" font-family="'Anthropic Sans', sans-serif" text-anchor="end">浏览器圆桌前端 (本次 demo 不用)</text>
+  <text x="80" y="1038">📁 相关材料/</text>
+  <text x="430" y="1038" font-size="10" fill="#6b6b66" font-family="'Anthropic Sans', sans-serif" text-anchor="end">演讲脚本 / 战略地图 / 架构图</text>
+</g>
+
+<!-- ═══════════════════════════════ -->
+<!-- RIGHT: data tree                -->
+<!-- ═══════════════════════════════ -->
+<g font-family="'SF Mono', 'Consolas', monospace" font-size="12" fill="#141413">
+
+  <!-- identity.md -->
+  <text x="640" y="160">📄 identity.md</text>
+  <text x="990" y="160" font-size="10" fill="#6b6b66" font-family="'Anthropic Sans', sans-serif" text-anchor="end">"你是谁" · 注入到所有 prompt</text>
+
+  <!-- config.yml -->
+  <text x="640" y="180">📄 config.yml</text>
+  <text x="990" y="180" font-size="10" fill="#6b6b66" font-family="'Anthropic Sans', sans-serif" text-anchor="end">默认 model / 议会规则</text>
+
+  <!-- sessions/ -->
+  <text x="640" y="212">📁 sessions/</text>
+  <text x="990" y="212" font-size="10" fill="#6b6b66" font-family="'Anthropic Sans', sans-serif" text-anchor="end">capture 写入 · 原始对话 + 标题</text>
+  <g font-size="11" fill="#3d3d3a">
+    <text x="680" y="232">└── 2026-04-25-散步与平静.md</text>
+    <text x="680" y="250">    2026-04-25-血糖稳定饮食系统.md</text>
+    <text x="680" y="268">    ... (5 个 session 已捕获)</text>
+  </g>
+
+  <!-- skills/ -->
+  <text x="640" y="296">📁 skills/</text>
+  <text x="990" y="296" font-size="10" fill="#6b6b66" font-family="'Anthropic Sans', sans-serif" text-anchor="end">distill P1 写入 · 原子高光</text>
+  <g font-size="11" fill="#3d3d3a">
+    <text x="680" y="316">└── 2026-04-25-散步与平静-h1.md</text>
+    <text x="680" y="334">    ...-h2.md ...-h3.md ...</text>
+    <text x="680" y="352">    (23 个 highlight 总计)</text>
+  </g>
+
+  <!-- personas/ ★ -->
+  <rect x="630" y="372" width="510" height="280" rx="8" fill="#fffaf0" stroke="#a06820" stroke-width="1"/>
+  <text x="640" y="392" font-weight="700" fill="#7a4f15">📁 personas/  ★ 三链路汇合</text>
+  <text x="1130" y="392" font-size="10" fill="#a06820" font-family="'Anthropic Sans', sans-serif" text-anchor="end">distill 写 · refine 改 · convene 读</text>
+
+  <!-- self/ -->
+  <text x="660" y="416" fill="#7a4f15">├── 📁 self/</text>
+  <text x="1130" y="416" font-size="10" fill="#6b6b66" font-family="'Anthropic Sans', sans-serif" text-anchor="end">从你的对话蒸馏出的"你的思考人格"</text>
+  <g font-size="11" fill="#3d3d3a">
+    <text x="700" y="436">│   ├── reframe-before-execute.md  v2 (0.92)</text>
+    <text x="700" y="454">│   ├── compress-to-heuristic.md  v2 (0.87)</text>
+    <text x="700" y="472">│   ├── tools-sharpen-or-dull.md  v2 (0.87)</text>
+    <text x="700" y="490">│   └── find-the-gap-not-the-fight.md v2 (0.85)</text>
+  </g>
+  <text x="1130" y="490" font-size="10" fill="#085041" font-family="'Anthropic Sans', sans-serif" font-weight="600" text-anchor="end">全部已 refine 到 v2</text>
+
+  <!-- mentors/ -->
+  <text x="660" y="514" fill="#7a4f15">├── 📁 mentors/</text>
+  <text x="1130" y="514" font-size="10" fill="#6b6b66" font-family="'Anthropic Sans', sans-serif" text-anchor="end">从 seeds 拷来 + 可手工添加</text>
+  <g font-size="11" fill="#3d3d3a">
+    <text x="700" y="534">│   ├── jobs.md</text>
+    <text x="700" y="552">│   ├── munger.md</text>
+    <text x="700" y="570">│   └── naval.md</text>
+  </g>
+
+  <!-- roles/ -->
+  <text x="660" y="592" fill="#7a4f15">├── 📁 roles/</text>
+  <g font-size="11" fill="#3d3d3a">
+    <text x="700" y="612">│   ├── devils-advocate.md</text>
+    <text x="700" y="630">│   └── first-customer.md</text>
+  </g>
+
+  <!-- _merged/ -->
+  <text x="660" y="654" fill="#888780">└── 📁 _merged/  (4 个归档)</text>
+  <text x="1130" y="654" font-size="10" fill="#888780" font-family="'Anthropic Sans', sans-serif" text-anchor="end">distill 旧 bug 制造的重复, 已归档</text>
+
+  <!-- transcripts/ -->
+  <text x="640" y="690">📁 transcripts/</text>
+  <text x="990" y="690" font-size="10" fill="#6b6b66" font-family="'Anthropic Sans', sans-serif" text-anchor="end">convene 写入 · 议会全过程留档</text>
+  <g font-size="11" fill="#3d3d3a">
+    <text x="680" y="710">└── 2026-04-25-我现在离职状态-...md</text>
+    <text x="680" y="728">    2026-04-25-我应该早睡还是熬夜赶项目.md</text>
+  </g>
+
+  <!-- exports/ -->
+  <text x="640" y="756">📁 exports/</text>
+  <text x="990" y="756" font-size="10" fill="#6b6b66" font-family="'Anthropic Sans', sans-serif" text-anchor="end">council export · MCP/Skills/Cursor 包</text>
+
+  <!-- live/ -->
+  <text x="640" y="778">📁 live/</text>
+  <text x="990" y="778" font-size="10" fill="#6b6b66" font-family="'Anthropic Sans', sans-serif" text-anchor="end">--watch 模式的事件流 (本次 demo 不用)</text>
+
+  <!-- .state/ -->
+  <text x="640" y="810">📁 .state/</text>
+  <text x="990" y="810" font-size="10" fill="#6b6b66" font-family="'Anthropic Sans', sans-serif" text-anchor="end">CLI 内部状态 · 不直接编辑</text>
+  <g font-size="11" fill="#3d3d3a">
+    <text x="680" y="830">└── distilled.json</text>
+    <text x="990" y="830" font-size="10" fill="#6b6b66" font-family="'Anthropic Sans', sans-serif" text-anchor="end">高光 ↔ persona 索引</text>
+    <text x="680" y="848">    summon-cache.json</text>
+  </g>
+</g>
+
+<!-- ═══════════════════════════════ -->
+<!-- Cross-link arrows (code → data) -->
+<!-- ═══════════════════════════════ -->
+<g>
+  <!-- capture.ts → sessions/ -->
+  <path d="M 270 252 Q 450 252 450 220 Q 450 215 470 215 L 630 215" fill="none" stroke="#185fa5" stroke-width="0.7" stroke-dasharray="3 3" opacity="0.5"/>
+
+  <!-- distill.ts → skills/ + personas/ -->
+  <path d="M 270 288 Q 460 288 470 300 L 630 300" fill="none" stroke="#185fa5" stroke-width="0.7" stroke-dasharray="3 3" opacity="0.5"/>
+
+  <!-- convene.ts → transcripts/ -->
+  <path d="M 280 306 Q 500 460 600 460 Q 615 460 625 540 Q 625 690 635 700" fill="none" stroke="#0f6e56" stroke-width="0.7" stroke-dasharray="3 3" opacity="0.4"/>
+
+  <!-- refine.ts → personas/ ★ -->
+  <path d="M 280 396 Q 500 396 530 410 L 625 410" fill="none" stroke="#a06820" stroke-width="1.2" marker-end="url(#arr-amber)"/>
+
+  <defs>
+    <marker id="arr-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#a06820" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+</g>
+
+<!-- ─── Legend ─── -->
+<g font-size="10" fill="#6b6b66" font-family="'Anthropic Sans', sans-serif">
+  <rect x="60" y="1052" width="1080" height="22" rx="4" fill="#faf9f6" stroke="#d8d6cf" stroke-width="0.5"/>
+  <text x="80" y="1067">★ = 链路 C 新增</text>
+  <text x="220" y="1067">v2 = 已 refine</text>
+  <text x="350" y="1067" fill="#a06820">琥珀色虚线 = refine 反哺路径</text>
+  <text x="600" y="1067" fill="#185fa5">蓝色虚线 = 摄入路径</text>
+  <text x="820" y="1067" fill="#0f6e56">绿色虚线 = 议会路径</text>
+</g>
+
+</svg>
