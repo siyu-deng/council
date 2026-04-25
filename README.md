@@ -40,7 +40,7 @@ council export --mcp
 # 把打印出的配置贴进 claude_desktop_config.json / .cursor/mcp.json → 重启客户端
 ```
 
-> ⚠️ **`council live`（网页圆桌可视化）目前需要 Bun runtime** — 因为 live server 用了 `Bun.serve()` 提供低延迟的 SSE。如需用网页 GUI，请先 `brew install bun` 或参考 [bun.sh](https://bun.sh)。CLI / MCP 部分全部跑在 Node 上。
+> 唯一例外: `council live`（网页圆桌可视化）需要 Bun。详见下面"安装"章节。
 
 ---
 
@@ -156,32 +156,15 @@ council init
 council convene "我该不该 X"
 ```
 
-**要求**: Node ≥ 20。**纯 npm 用法不需要 Bun**——dist 是 Node 单文件 bundle。
+**要求**: Node ≥ 20。Anthropic API key.
 
-> ⚠️ 唯一例外: `council live` (网页圆桌直播) 仍需 Bun runtime——live server 用了 `Bun.serve()` 提供低延迟 SSE。**只用 CLI / MCP 的话, 装 Node 即可.**
+> **关于 `council live` (网页圆桌直播)**: 这一个命令需要额外装 Bun runtime, 因为 live server 用了 `Bun.serve()` 提供低延迟 SSE。`brew install bun` 即可。**纯 CLI / MCP 用法不需要 Bun.**
 
-### 路径 B · 从源码 (贡献者 / 跑 live server / 修引擎)
+---
 
-源码级运行需要 Bun, 因为引擎用了 TypeScript parameter properties 等语法, Node 不直接支持 (但 `tsdown` 打出来的 dist 是干净的 Node bundle, 这就是为什么发布版只要 Node).
+### 想从源码跑 / 贡献代码?
 
-```bash
-# 1. Bun (如果没有)
-curl -fsSL https://bun.sh/install | bash
-
-# 2. 依赖
-git clone https://github.com/siyu-deng/council.git && cd council
-bun install
-(cd web && bun install)
-
-# 3. API Key
-echo 'ANTHROPIC_API_KEY=sk-ant-...' > .env
-
-# 4. 初始化 (创建 ~/.council/ + 预置 3 mentor + 2 role)
-bun run bin/council.ts init
-
-# 5. (可选) demo 前预检
-bun preflight              # 全绿 = 可以上场
-```
+见 [`CONTRIBUTING.md`](CONTRIBUTING.md). 源码级开发需要 Bun.
 
 ---
 
@@ -280,51 +263,19 @@ claude mcp add council -e ANTHROPIC_API_KEY=sk-ant-... -- npx -y @moyu-build/cou
 
 ---
 
-## Dev
-
-> 源码级开发需要 Bun。**纯使用者通过 `npm i -g @moyu-build/council` 即可, 不需要这一节**。
-
-```bash
-bun install
-(cd web && bun install && bun run build)   # 首次构建 web 产物
-
-# 后端 + 前端同时跑
-bun run bin/council.ts live                # 本地 HTTP/WS on :3737
-# 在另一个 terminal:
-cd web && bun run dev                      # Vite dev server on :5173, 代理到 3737
-
-# 沙箱测试
-COUNCIL_HOME=/tmp/.council-test bun run bin/council.ts init
-
-# Mock 模式 (不调真实 API)
-COUNCIL_MOCK=1 bun run bin/council.ts convene "..." --watch
-```
-
-### 预检脚本
-
-```bash
-bun preflight              # 真实 API (~2 分钟)
-bun preflight:mock         # mock 模式 (~5 秒)
-bun preflight:fast         # 跳过 convene (省 API 钱)
-bash scripts/preflight.sh --skip-web   # 只验 CLI/MCP
-```
-
-全绿即可上场。
-
----
-
 ## 状态 · 下一步
 
 - ✅ **L0**: 事件总线 + 结构化 synthesis + persona 视觉元数据
-- ✅ **L1**: Bun HTTP/WS server + Vite/React 圆桌页面 + `--watch`
+- ✅ **L1**: Web HTTP/WS server + Vite/React 圆桌页面 + `--watch`
 - ✅ **L2**: 网页 capture/distill 流程 (粘贴 → 蒸馏 → 直接召集)
-- 🔜 **L3**: Pake/Tauri Mac 原生 app (依赖 Rust ≥ 1.78)
+- ✅ **L3**: 链路 C 反哺 (refine + evolve) + 跨 LLM 验证 (Cursor / Claude Desktop)
+- 🔜 **L4**: 把 live server 从 Bun 迁到 Node 原生 http, 解除唯一的 Bun 依赖
 - 未来: 剪贴板监听自动 capture, 桌面端全局快捷键, Council 之间的互相借调
 
-详细架构见 [council-architecture.md](./council-architecture.md) · 演讲脚本见 [DEMO.md](./DEMO.md)
+完整架构见 [`docs/architecture/architecture.md`](./docs/architecture/architecture.md) · 演讲材料见 [`docs/`](./docs/) · 贡献请看 [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 
 ---
 
 ## License
 
-MIT
+MIT © 墨宇 (Siyu Deng)
