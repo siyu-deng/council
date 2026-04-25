@@ -1,0 +1,192 @@
+<svg width="100%" viewBox="0 0 1240 1754" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, 'PingFang SC', system-ui, sans-serif">
+<title>Council 与四大竞品 · 主语对比</title>
+
+<rect width="1240" height="1754" fill="#fafaf7"/>
+
+<!-- Header -->
+<g>
+  <text x="80" y="100" font-size="36" font-weight="700" fill="#141413">主语对比 · Council vs 四大竞品</text>
+  <text x="80" y="138" font-size="16" fill="#5d5d58">每个产品做的"个人 AI", 第一句话的主语决定了它是什么。</text>
+  <line x1="80" y1="160" x2="1160" y2="160" stroke="#141413" stroke-width="1.5"/>
+</g>
+
+<!-- Big question banner -->
+<g>
+  <rect x="80" y="200" width="1080" height="100" rx="8" fill="#fbf1e1" stroke="#a06820" stroke-width="0.5"/>
+  <text x="620" y="240" text-anchor="middle" font-size="20" fill="#7a4f15">他们都在问:</text>
+  <text x="620" y="278" text-anchor="middle" font-size="22" font-weight="600" fill="#5e3d10">"怎么让 AI 更像你?"</text>
+</g>
+
+<!-- Comparison rows -->
+<g transform="translate(80, 360)">
+  <!-- Column headers -->
+  <g>
+    <rect x="0" y="0" width="200" height="48" fill="#141413"/>
+    <text x="100" y="30" text-anchor="middle" font-size="13" font-weight="600" fill="#fafaf7">维度 \ 项目</text>
+
+    <rect x="200" y="0" width="180" height="48" fill="#e8eef5"/>
+    <text x="290" y="30" text-anchor="middle" font-size="14" font-weight="700" fill="#0c447c">Evolver</text>
+
+    <rect x="380" y="0" width="180" height="48" fill="#e8eef5"/>
+    <text x="470" y="30" text-anchor="middle" font-size="14" font-weight="700" fill="#0c447c">Hermes</text>
+
+    <rect x="560" y="0" width="180" height="48" fill="#e8eef5"/>
+    <text x="650" y="30" text-anchor="middle" font-size="14" font-weight="700" fill="#0c447c">Second Me</text>
+
+    <rect x="740" y="0" width="180" height="48" fill="#e8eef5"/>
+    <text x="830" y="30" text-anchor="middle" font-size="14" font-weight="700" fill="#0c447c">花叔生态</text>
+
+    <rect x="920" y="0" width="160" height="48" fill="#3a2f26"/>
+    <text x="1000" y="30" text-anchor="middle" font-size="14" font-weight="700" fill="#F6C26B">Council</text>
+  </g>
+
+  <!-- Row 1: 主语 -->
+  <g transform="translate(0, 48)">
+    <rect x="0" y="0" width="200" height="100" fill="#1A1815"/>
+    <text x="20" y="40" font-size="13" fill="#a8a299">主语 (谁在动?)</text>
+    <text x="20" y="62" font-size="11" fill="#6b6259">第一句话讲的是谁</text>
+
+    <rect x="200" y="0" width="180" height="100" fill="#fff" stroke="#cdd6df"/>
+    <text x="290" y="50" text-anchor="middle" font-size="15" fill="#5d5d58">AI Agent</text>
+    <text x="290" y="78" text-anchor="middle" font-size="11" fill="#888" font-style="italic">在自我进化</text>
+
+    <rect x="380" y="0" width="180" height="100" fill="#fff" stroke="#cdd6df"/>
+    <text x="470" y="50" text-anchor="middle" font-size="15" fill="#5d5d58">AI 助手</text>
+    <text x="470" y="78" text-anchor="middle" font-size="11" fill="#888" font-style="italic">在和你成长</text>
+
+    <rect x="560" y="0" width="180" height="100" fill="#fff" stroke="#cdd6df"/>
+    <text x="650" y="50" text-anchor="middle" font-size="15" fill="#5d5d58">AI 分身</text>
+    <text x="650" y="78" text-anchor="middle" font-size="11" fill="#888" font-style="italic">在模仿你</text>
+
+    <rect x="740" y="0" width="180" height="100" fill="#fff" stroke="#cdd6df"/>
+    <text x="830" y="50" text-anchor="middle" font-size="15" fill="#5d5d58">AI 蒸馏的他人</text>
+    <text x="830" y="78" text-anchor="middle" font-size="11" fill="#888" font-style="italic">在被你召唤</text>
+
+    <rect x="920" y="0" width="160" height="100" fill="#fbf1e1" stroke="#a06820" stroke-width="2"/>
+    <text x="1000" y="50" text-anchor="middle" font-size="17" font-weight="700" fill="#5e3d10">人</text>
+    <text x="1000" y="78" text-anchor="middle" font-size="11" fill="#7a4f15" font-style="italic">的思考被外化</text>
+  </g>
+
+  <!-- Row 2: 用户角色 -->
+  <g transform="translate(0, 148)">
+    <rect x="0" y="0" width="200" height="100" fill="#1A1815"/>
+    <text x="20" y="40" font-size="13" fill="#a8a299">用户角色</text>
+    <text x="20" y="62" font-size="11" fill="#6b6259">你扮演什么</text>
+
+    <rect x="200" y="0" width="180" height="100" fill="#fff" stroke="#cdd6df"/>
+    <text x="290" y="58" text-anchor="middle" font-size="13" fill="#5d5d58">训练师 / 运维</text>
+
+    <rect x="380" y="0" width="180" height="100" fill="#fff" stroke="#cdd6df"/>
+    <text x="470" y="58" text-anchor="middle" font-size="13" fill="#5d5d58">被服务的人</text>
+
+    <rect x="560" y="0" width="180" height="100" fill="#fff" stroke="#cdd6df"/>
+    <text x="650" y="58" text-anchor="middle" font-size="13" fill="#5d5d58">训练师 + 用户</text>
+
+    <rect x="740" y="0" width="180" height="100" fill="#fff" stroke="#cdd6df"/>
+    <text x="830" y="58" text-anchor="middle" font-size="13" fill="#5d5d58">召唤者</text>
+
+    <rect x="920" y="0" width="160" height="100" fill="#fbf1e1" stroke="#a06820" stroke-width="2"/>
+    <text x="1000" y="50" text-anchor="middle" font-size="14" font-weight="700" fill="#5e3d10">议会召集人</text>
+    <text x="1000" y="76" text-anchor="middle" font-size="11" fill="#7a4f15">主位决策者</text>
+  </g>
+
+  <!-- Row 3: 隐喻 -->
+  <g transform="translate(0, 248)">
+    <rect x="0" y="0" width="200" height="120" fill="#1A1815"/>
+    <text x="20" y="40" font-size="13" fill="#a8a299">产品隐喻</text>
+    <text x="20" y="62" font-size="11" fill="#6b6259">一句话画像</text>
+
+    <rect x="200" y="0" width="180" height="120" fill="#fff" stroke="#cdd6df"/>
+    <text x="290" y="50" text-anchor="middle" font-size="11" fill="#5d5d58">"我在养一只</text>
+    <text x="290" y="68" text-anchor="middle" font-size="11" fill="#5d5d58">会进化的</text>
+    <text x="290" y="86" text-anchor="middle" font-size="11" fill="#5d5d58">数字生物"</text>
+
+    <rect x="380" y="0" width="180" height="120" fill="#fff" stroke="#cdd6df"/>
+    <text x="470" y="50" text-anchor="middle" font-size="11" fill="#5d5d58">"我有一个</text>
+    <text x="470" y="68" text-anchor="middle" font-size="11" fill="#5d5d58">会成长的</text>
+    <text x="470" y="86" text-anchor="middle" font-size="11" fill="#5d5d58">AI 秘书"</text>
+
+    <rect x="560" y="0" width="180" height="120" fill="#fff" stroke="#cdd6df"/>
+    <text x="650" y="50" text-anchor="middle" font-size="11" fill="#5d5d58">"我有一个</text>
+    <text x="650" y="68" text-anchor="middle" font-size="11" fill="#5d5d58">私人的 AI</text>
+    <text x="650" y="86" text-anchor="middle" font-size="11" fill="#5d5d58">版本的我"</text>
+
+    <rect x="740" y="0" width="180" height="120" fill="#fff" stroke="#cdd6df"/>
+    <text x="830" y="50" text-anchor="middle" font-size="11" fill="#5d5d58">"我能召唤</text>
+    <text x="830" y="68" text-anchor="middle" font-size="11" fill="#5d5d58">某某思想家</text>
+    <text x="830" y="86" text-anchor="middle" font-size="11" fill="#5d5d58">来回答我"</text>
+
+    <rect x="920" y="0" width="160" height="120" fill="#fbf1e1" stroke="#a06820" stroke-width="2"/>
+    <text x="1000" y="48" text-anchor="middle" font-size="12" font-weight="700" fill="#5e3d10">"我在主持</text>
+    <text x="1000" y="68" text-anchor="middle" font-size="12" font-weight="700" fill="#5e3d10">自己的思想</text>
+    <text x="1000" y="88" text-anchor="middle" font-size="12" font-weight="700" fill="#5e3d10">圆桌"</text>
+  </g>
+
+  <!-- Row 4: 谁更聪明 -->
+  <g transform="translate(0, 368)">
+    <rect x="0" y="0" width="200" height="100" fill="#1A1815"/>
+    <text x="20" y="40" font-size="13" fill="#a8a299">谁更聪明?</text>
+    <text x="20" y="62" font-size="11" fill="#6b6259">产品胜利的标志</text>
+
+    <rect x="200" y="0" width="180" height="100" fill="#fff" stroke="#cdd6df"/>
+    <text x="290" y="58" text-anchor="middle" font-size="13" fill="#5d5d58">Agent 变聪明</text>
+
+    <rect x="380" y="0" width="180" height="100" fill="#fff" stroke="#cdd6df"/>
+    <text x="470" y="58" text-anchor="middle" font-size="13" fill="#5d5d58">Agent 变聪明</text>
+
+    <rect x="560" y="0" width="180" height="100" fill="#fff" stroke="#cdd6df"/>
+    <text x="650" y="58" text-anchor="middle" font-size="13" fill="#5d5d58">分身像你</text>
+
+    <rect x="740" y="0" width="180" height="100" fill="#fff" stroke="#cdd6df"/>
+    <text x="830" y="58" text-anchor="middle" font-size="13" fill="#5d5d58">蒸馏库扩大</text>
+
+    <rect x="920" y="0" width="160" height="100" fill="#fbf1e1" stroke="#a06820" stroke-width="2"/>
+    <text x="1000" y="50" text-anchor="middle" font-size="15" font-weight="700" fill="#5e3d10">你变清晰</text>
+    <text x="1000" y="78" text-anchor="middle" font-size="11" fill="#7a4f15">↑ 这才是不同</text>
+  </g>
+
+  <!-- Row 5: 数据归属 -->
+  <g transform="translate(0, 468)">
+    <rect x="0" y="0" width="200" height="100" fill="#1A1815"/>
+    <text x="20" y="40" font-size="13" fill="#a8a299">数据归属</text>
+    <text x="20" y="62" font-size="11" fill="#6b6259">谁拥有"你"</text>
+
+    <rect x="200" y="0" width="180" height="100" fill="#fff" stroke="#cdd6df"/>
+    <text x="290" y="58" text-anchor="middle" font-size="13" fill="#5d5d58">Memory Graph</text>
+
+    <rect x="380" y="0" width="180" height="100" fill="#fff" stroke="#cdd6df"/>
+    <text x="470" y="58" text-anchor="middle" font-size="13" fill="#5d5d58">Honcho 模型</text>
+
+    <rect x="560" y="0" width="180" height="100" fill="#fff" stroke="#cdd6df"/>
+    <text x="650" y="58" text-anchor="middle" font-size="13" fill="#5d5d58">训练好的模型</text>
+
+    <rect x="740" y="0" width="180" height="100" fill="#fff" stroke="#cdd6df"/>
+    <text x="830" y="58" text-anchor="middle" font-size="13" fill="#5d5d58">SKILL.md</text>
+
+    <rect x="920" y="0" width="160" height="100" fill="#fbf1e1" stroke="#a06820" stroke-width="2"/>
+    <text x="1000" y="48" text-anchor="middle" font-size="14" font-weight="700" fill="#5e3d10">~/.council/</text>
+    <text x="1000" y="78" text-anchor="middle" font-size="11" fill="#7a4f15">纯 Markdown</text>
+  </g>
+</g>
+
+<!-- Verdict box -->
+<g transform="translate(80, 1400)">
+  <rect x="0" y="0" width="1080" height="180" rx="10" fill="#141413"/>
+  <text x="540" y="50" text-anchor="middle" font-size="20" fill="#857e75">Council 问的是另一个问题:</text>
+
+  <text x="540" y="100" text-anchor="middle" font-size="22" font-weight="600" fill="#E8DCC4">怎么让人的思考变得更结构化、更可被自己召集、更可辩论</text>
+  <text x="540" y="130" text-anchor="middle" font-size="22" font-weight="600" fill="#E8DCC4">让人继续做决策者, AI 只是让议会继续开着的基础设施</text>
+
+  <line x1="200" y1="148" x2="880" y2="148" stroke="#3a2f26" stroke-dasharray="2 4"/>
+  <text x="540" y="170" text-anchor="middle" font-size="14" font-style="italic" fill="#F6C26B">Hermes 让 AI 更像你 · Council 让你更像你</text>
+</g>
+
+<!-- Footer -->
+<text x="80" y="1700" font-size="11" fill="#888">
+  调研依据: Evolver (EvoMap 2026-02 开源 · 6k+ stars) / Hermes (Nous Research) / Second Me (mindverse · 14k stars) / 花叔 nuwa-skill 生态
+</text>
+<text x="80" y="1720" font-size="11" fill="#888" font-style="italic">
+  这不是功能差异, 是世界观差异 — 整个产品的下游决策都被这个差异决定。
+</text>
+
+</svg>
