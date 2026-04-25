@@ -1,6 +1,7 @@
 import { homedir } from "node:os";
-import { join, resolve } from "node:path";
+import { join, resolve, dirname } from "node:path";
 import { existsSync, mkdirSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 export function councilRoot(): string {
   return process.env.COUNCIL_HOME ?? join(homedir(), ".council");
@@ -32,7 +33,10 @@ export const paths = {
 };
 
 export function repoRoot(): string {
-  return resolve(import.meta.dir, "..", "..");
+  // Bun 提供 import.meta.dir, Node 没有——用 import.meta.url 兼容写法。
+  // 打包后 (dist/) 这个文件位置在 dist/, 所以 .. / .. 仍指向包根。
+  const here = dirname(fileURLToPath(import.meta.url));
+  return resolve(here, "..", "..");
 }
 
 export const seedPaths = {

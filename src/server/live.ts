@@ -71,7 +71,7 @@ bus.subscribe((e: CouncilEvent) => {
 // ──────────────────────────────────────────────────────────
 // 命令 dispatch (POST /api/command)
 // ──────────────────────────────────────────────────────────
-type CommandType = "convene" | "capture" | "distill";
+type CommandType = "convene" | "capture" | "distill" | "refine";
 interface CommandRequest {
   type: CommandType;
   args: Record<string, unknown>;
@@ -111,6 +111,22 @@ async function dispatchCommand(
         console.error(`[live] capture failed: ${String(err)}`);
       });
       return { ok: true, run_id: runId };
+    }
+
+    if (req.type === "refine") {
+      const personaRef = req.args.persona_ref
+        ? String(req.args.persona_ref)
+        : undefined;
+      const { refineCommand } = await import("../commands/refine.ts");
+      const result = await refineCommand(personaRef, {
+        yes: true,
+        silent: true,
+      });
+      return {
+        ok: true,
+        run_id: newRunIdGeneric("refine"),
+        result,
+      } as { ok: true; run_id: string; result: unknown };
     }
 
     if (req.type === "distill") {

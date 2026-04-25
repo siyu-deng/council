@@ -19,6 +19,7 @@ import {
   getSession,
   listSkills,
   getSkill,
+  getTranscript,
   type SessionFrontmatter,
 } from "../core/skill-md.ts";
 import { distillOne } from "../engine/distill.ts";
@@ -595,7 +596,6 @@ server.registerTool(
     const id = await convene(question, {
       with: personas?.join(","),
     });
-    const { getTranscript } = await import("../core/skill-md.ts");
     const t = getTranscript(id);
     return {
       content: [

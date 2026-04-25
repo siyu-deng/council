@@ -92,4 +92,17 @@ export const api = {
     getJSON<{ personas: PersonaRow[] }>("/api/personas").then((r) => r.personas),
 
   identity: () => getJSON<IdentityResponse>("/api/identity"),
+
+  // —— /api/command 派发 (refine / capture-text 等)
+  command: async (req: {
+    type: "refine" | "capture" | "convene" | "distill";
+    args: Record<string, unknown>;
+  }) => {
+    const res = await fetch("/api/command", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req),
+    });
+    return res.json() as Promise<{ ok: boolean; run_id?: string; result?: unknown; error?: string }>;
+  },
 };

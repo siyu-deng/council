@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 import { loadDotEnv } from "../src/core/env.ts";
 loadDotEnv();
 
@@ -102,9 +102,19 @@ program
 // ━━━ live (standalone live server, 不发起议会) ━━━
 program
   .command("live")
-  .description("仅启动 Council Live Server (端口 3737), 不发起议会")
+  .description("仅启动 Council Live Server (端口 3737, 需要 Bun runtime)")
   .option("-p, --port <n>", "端口 (默认 3737)", (v) => parseInt(v, 10))
   .action(async (opts) => {
+    // live server 用了 Bun.serve(), npm 分发版跑在 Node 上不可用。
+    // 检测到非 Bun 环境时给清楚的提示, 而不是 cryptic 模块缺失错误。
+    if (typeof (globalThis as { Bun?: unknown }).Bun === "undefined") {
+      log.error(
+        "`council live` 需要 Bun runtime。\n" +
+          "  → 安装 Bun: https://bun.sh\n" +
+          "  → 或从源码运行: git clone & bun run bin/council.ts live",
+      );
+      process.exit(1);
+    }
     const { startLiveServer } = await import("../src/server/live.ts");
     startLiveServer({ port: opts.port });
     log.muted("  按 Ctrl+C 结束");

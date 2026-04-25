@@ -105,14 +105,34 @@ Markdown + YAML + JSONL, 没有数据库。用户拥有完全控制权。
 
 ---
 
-## 安装与初始化
+## 安装
+
+### 路径 A · NPM (推荐, 90% 用户)
+
+```bash
+# 一次性试水, 不全局装
+export ANTHROPIC_API_KEY=sk-ant-...
+npx @siyu/council@latest init
+npx @siyu/council@latest convene "我该不该 X"
+
+# 或全局装 (装一次, 之后命令直接是 council)
+npm i -g @siyu/council
+council init
+council convene "我该不该 X"
+```
+
+要求: Node ≥ 20。无需 Bun。
+
+> ⚠️ `council live` (网页圆桌直播) 仍需 Bun runtime——纯 CLI / MCP 用法不需要。
+
+### 路径 B · 从源码 (开发者 / 想跑 live server)
 
 ```bash
 # 1. Bun (如果没有)
 curl -fsSL https://bun.sh/install | bash
 
 # 2. 依赖
-cd councli
+git clone <repo> && cd councli
 bun install
 (cd web && bun install)
 
@@ -122,7 +142,7 @@ echo 'ANTHROPIC_API_KEY=sk-ant-...' > .env
 # 4. 初始化 (创建 ~/.council/ + 预置 3 mentor + 2 role)
 bun run bin/council.ts init
 
-# 5. (可选) 一次 demo 前预检
+# 5. (可选) demo 前预检
 bun preflight              # 全绿 = 可以上场
 ```
 
@@ -151,10 +171,38 @@ bun preflight              # 全绿 = 可以上场
 
 | Tool | 用途 |
 |---|---|
-| `council_list_personas` | 列出可用 persona |
+| `council_who_am_i` | 拉用户身份档案 + 全部可用 persona (会话开场调一次) |
+| `council_list_personas` | 列出可用 persona (轻量) |
 | `council_convene` | 召开议会, 返回 transcript |
 | `council_ask_persona` | 单独问某个 persona |
+| `council_should_capture` | 在 capture 前判断对话值不值得 |
 | `council_capture_this` | 把当前对话捕获并立即蒸馏 |
+| `council_bootstrap_identity` | 基于已有 self personas 反向回推 identity 草稿 |
+
+### 接入 MCP 客户端
+
+**Claude Code (一行命令)**:
+
+```bash
+claude mcp add council -e ANTHROPIC_API_KEY=sk-ant-... -- npx -y @siyu/council@latest serve
+```
+
+**Claude Desktop / Cursor / Cherry Studio (改 JSON 配置)**:
+
+```json
+{
+  "mcpServers": {
+    "council": {
+      "command": "npx",
+      "args": ["-y", "@siyu/council@latest", "serve"],
+      "env": { "ANTHROPIC_API_KEY": "sk-ant-..." }
+    }
+  }
+}
+```
+
+> 客户端首次启动会触发 `npx` 拉取最新版, 之后命中 npm 缓存秒启动。`@latest` 标签确保你跟主分支。
+> 数据落在 `~/.council/`, 跨客户端共享同一份身份档案。
 
 ---
 

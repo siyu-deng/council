@@ -3,7 +3,8 @@ import { networkInterfaces } from "node:os";
 import { isInitialized } from "../core/paths.ts";
 import { NotInitializedError } from "../core/errors.ts";
 import { convene } from "../engine/convene.ts";
-import { startLiveServer } from "../server/live.ts";
+// 注意: live.ts 用了 Bun.serve(), 故只在 --watch 时按需 dynamic import,
+// 避免 Node 加载主 bundle 时被 `import "bun"` 阻塞。
 import { log, c } from "../core/logger.ts";
 import { newRunId } from "../engine/events.ts";
 
@@ -50,6 +51,17 @@ async function conveneWithWatch(
   question: string,
   opts: ConveneCmdOpts,
 ): Promise<void> {
+  // --watch 依赖 Bun runtime (live server 用 Bun.serve)。
+  // Node 环境给清楚的提示, 不要让 dynamic import 报 cryptic 错。
+  if (typeof (globalThis as { Bun?: unknown }).Bun === "undefined") {
+    log.error(
+      "`--watch` 需要 Bun runtime (live server 用 Bun.serve)。\n" +
+        "  → 安装 Bun: https://bun.sh\n" +
+        "  → 或去掉 --watch, 跑纯 CLI 模式即可",
+    );
+    process.exit(1);
+  }
+  const { startLiveServer } = await import("../server/live.ts");
   const server = startLiveServer();
   const port = server.port;
   const runId = newRunId(
