@@ -21,7 +21,10 @@ import { distillOne } from "../engine/distill.ts";
 import { convene } from "../engine/convene.ts";
 import { streamStatement } from "../prompts/P4-statement.ts";
 import { shouldCapture } from "../prompts/P10-should-capture.ts";
-import { isInitialized } from "../core/paths.ts";
+import { bootstrapIdentity } from "../prompts/P11-bootstrap-identity.ts";
+import { isInitialized, paths } from "../core/paths.ts";
+import { writeMd } from "../core/frontmatter.ts";
+import { readState } from "../engine/distill.ts";
 
 function requireInit(): void {
   if (!isInitialized()) {
@@ -104,8 +107,40 @@ server.registerTool(
     const lines: string[] = [];
     lines.push("# 关于用户");
     lines.push("");
-    lines.push(identity || "(用户尚未填写 identity.md)");
-    lines.push("");
+
+    // —— 检测 identity.md 是否仍是 seed 模板 (含 3+ 个 <...> 占位符即视为未填) ——
+    const placeholderCount = (identity.match(/<[^<>]{3,80}>/g) ?? []).length;
+    const isTemplate = !identity || placeholderCount >= 3;
+
+    if (isTemplate) {
+      lines.push("> _用户尚未填写 identity.md。以下是 Council 从已蒸馏 persona 现场归纳的身份摘要 (粗略)._");
+      lines.push("");
+      if (self.length > 0) {
+        const top = [...self]
+          .sort(
+            (a, b) =>
+              (b.frontmatter.confidence ?? 0) -
+              (a.frontmatter.confidence ?? 0),
+          )
+          .slice(0, 3);
+        lines.push(
+          `这是一个**${top
+            .map((p) => p.frontmatter.description.split(/[，,。;；]/)[0])
+            .filter(Boolean)
+            .join("；")}**类型的思考者。`,
+        );
+      } else {
+        lines.push("(尚无 self persona, 也尚无 identity. Council 还不认识你.)");
+      }
+      lines.push("");
+      lines.push(
+        "💡 调 `council_bootstrap_identity` 可基于已有 persona + highlights 生成一份 identity.md 草稿。",
+      );
+      lines.push("");
+    } else {
+      lines.push(identity);
+      lines.push("");
+    }
 
     if (self.length > 0) {
       lines.push("## 用户思考人格 (self personas)");
@@ -148,6 +183,95 @@ server.registerTool(
 
     return {
       content: [{ type: "text" as const, text: lines.join("\n") }],
+    };
+  },
+);
+
+// ━━━ council_bootstrap_identity ━━━
+server.registerTool(
+  "council_bootstrap_identity",
+  {
+    description:
+      "基于现有的 self personas + 高光原话, 自动**反向回推**出一份 identity.md 草稿。适合用户尚未填写或想刷新身份档案的场景。默认不会覆盖已存在的真实身份, 需 force=true 才覆盖.",
+    inputSchema: {
+      force: z
+        .boolean()
+        .optional()
+        .describe(
+          "true 时覆盖已有 identity.md (含已填写过的). 默认 false: 仅在 identity.md 还是模板时写入.",
+        ),
+    },
+  },
+  async ({ force }) => {
+    requireInit();
+    const personas = listPersonas();
+    const self = personas.filter((p) => p.frontmatter.type === "self");
+    if (self.length === 0) {
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: "无法 bootstrap: 还没有 self persona。请先 capture 一些对话并 distill, 再回头试。",
+          },
+        ],
+      };
+    }
+
+    // 抓代表性 highlights (按 confidence 排, 每个 type 最多 3 条)
+    const state = readState();
+    const byType = new Map<string, Array<{ type: string; title: string; quote: string; confidence: number }>>();
+    for (const h of Object.values(state.highlights)) {
+      const arr = byType.get(h.data.type) ?? [];
+      arr.push({
+        type: h.data.type,
+        title: h.data.title,
+        quote: h.data.user_quote,
+        confidence: h.data.confidence,
+      });
+      byType.set(h.data.type, arr);
+    }
+    const excerpts: Array<{ type: string; title: string; quote: string }> = [];
+    for (const arr of byType.values()) {
+      arr.sort((a, b) => b.confidence - a.confidence);
+      excerpts.push(...arr.slice(0, 3));
+    }
+
+    // 检查现有 identity 是否模板
+    const current = readIdentity().trim();
+    const placeholderCount = (current.match(/<[^<>]{3,80}>/g) ?? []).length;
+    const isTemplate = !current || placeholderCount >= 3;
+
+    if (!isTemplate && !force) {
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text:
+              "identity.md 已经是用户填好的真实内容, 默认不覆盖。如要重新生成草稿覆盖, 调用时传 `force: true`。",
+          },
+        ],
+      };
+    }
+
+    // 调 LLM
+    const result = await bootstrapIdentity(self, excerpts);
+
+    // 写盘 (作为 draft - 如果没有 owner / created_at frontmatter, 加默认)
+    const today = new Date().toISOString().slice(0, 10);
+    const draftFrontmatter = { owner: "(自动生成, 待你确认)", created_at: today };
+    writeMd(paths.identity(), draftFrontmatter, result.identity_md);
+
+    return {
+      content: [
+        {
+          type: "text" as const,
+          text:
+            `✓ 已写入 ~/.council/identity.md (基于 ${self.length} 个 self persona + ${excerpts.length} 条 highlight)。\n\n` +
+            `**生成依据**: ${result.rationale}\n\n` +
+            `---\n\n${result.identity_md}\n\n---\n\n` +
+            `如有不准, 直接编辑文件; 或调 council_bootstrap_identity({ force: true }) 重生成。下次 council_who_am_i 会拉这份新身份。`,
+        },
+      ],
     };
   },
 );
