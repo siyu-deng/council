@@ -129,7 +129,7 @@ council export --mcp
 │   ├── mentors/{naval,jobs,munger}.md # 预置
 │   └── roles/{devils-advocate,first-customer}.md
 ├── sessions/<date>-<slug>.md          # 捕获的原始对话
-├── skills/<session-id>-hN.md          # 蒸馏出的高光
+├── skills/<观点-slug>.md              # 蒸馏出的高光 (按观点命名, 例: 真实性守门员是产品退化的防线.md)
 ├── transcripts/<date>-<slug>.md       # 议会 transcript (人读的)
 ├── live/<run-id>.jsonl                # 议会事件流 (网页/telemetry 订阅)
 ├── exports/mcp-server/                # MCP 导出产物
@@ -156,18 +156,20 @@ council init
 council convene "我该不该 X"
 ```
 
-要求: Node ≥ 20。无需 Bun。
+**要求**: Node ≥ 20。**纯 npm 用法不需要 Bun**——dist 是 Node 单文件 bundle。
 
-> ⚠️ `council live` (网页圆桌直播) 仍需 Bun runtime——纯 CLI / MCP 用法不需要。
+> ⚠️ 唯一例外: `council live` (网页圆桌直播) 仍需 Bun runtime——live server 用了 `Bun.serve()` 提供低延迟 SSE。**只用 CLI / MCP 的话, 装 Node 即可.**
 
-### 路径 B · 从源码 (开发者 / 想跑 live server)
+### 路径 B · 从源码 (贡献者 / 跑 live server / 修引擎)
+
+源码级运行需要 Bun, 因为引擎用了 TypeScript parameter properties 等语法, Node 不直接支持 (但 `tsdown` 打出来的 dist 是干净的 Node bundle, 这就是为什么发布版只要 Node).
 
 ```bash
 # 1. Bun (如果没有)
 curl -fsSL https://bun.sh/install | bash
 
 # 2. 依赖
-git clone <repo> && cd councli
+git clone https://github.com/siyu-deng/council.git && cd council
 bun install
 (cd web && bun install)
 
@@ -279,6 +281,8 @@ claude mcp add council -e ANTHROPIC_API_KEY=sk-ant-... -- npx -y @moyu-build/cou
 ---
 
 ## Dev
+
+> 源码级开发需要 Bun。**纯使用者通过 `npm i -g @moyu-build/council` 即可, 不需要这一节**。
 
 ```bash
 bun install

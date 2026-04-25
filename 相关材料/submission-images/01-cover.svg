@@ -1,0 +1,131 @@
+<svg width="100%" viewBox="0 0 1240 1754" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, 'PingFang SC', system-ui, sans-serif">
+<title>Council · 你的思考议会 · 封面</title>
+
+<defs>
+  <radialGradient id="bg" cx="50%" cy="42%" r="80%">
+    <stop offset="0%" stop-color="#2a2420"/>
+    <stop offset="50%" stop-color="#161311"/>
+    <stop offset="100%" stop-color="#0A0908"/>
+  </radialGradient>
+  <radialGradient id="flame" cx="50%" cy="40%" r="50%">
+    <stop offset="0%" stop-color="#fff3c4" stop-opacity="0.95"/>
+    <stop offset="40%" stop-color="#F6C26B" stop-opacity="0.7"/>
+    <stop offset="100%" stop-color="#B7352D" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="halo" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#E8B563" stop-opacity="0.18"/>
+    <stop offset="60%" stop-color="#E8B563" stop-opacity="0.04"/>
+    <stop offset="100%" stop-color="#E8B563" stop-opacity="0"/>
+  </radialGradient>
+</defs>
+
+<!-- Background -->
+<rect width="1240" height="1754" fill="url(#bg)"/>
+<rect width="1240" height="1754" fill="url(#halo)"/>
+
+<!-- Top brand bar -->
+<g>
+  <text x="100" y="120" font-size="24" letter-spacing="6" font-weight="600" fill="#E8B563">COUNCIL</text>
+  <text x="100" y="148" font-size="14" letter-spacing="2" fill="#857e75">· 你的思考议会 ·</text>
+  <line x1="100" y1="170" x2="220" y2="170" stroke="#E8B563" stroke-width="1" opacity="0.6"/>
+</g>
+
+<text x="1140" y="120" text-anchor="end" font-size="13" fill="#857e75" font-style="italic">EvoTavern Hackathon 2026</text>
+
+<!-- Center candle + table illustration -->
+<g transform="translate(620, 480)">
+  <!-- Halo -->
+  <circle r="280" fill="url(#halo)"/>
+
+  <!-- Round table ellipse -->
+  <ellipse cx="0" cy="120" rx="320" ry="80" fill="#1f1a16" stroke="#3a2f26" stroke-width="2" opacity="0.9"/>
+  <ellipse cx="0" cy="120" rx="280" ry="60" fill="none" stroke="#6b4a2b" stroke-width="0.5" opacity="0.5"/>
+
+  <!-- Three persona seats around table -->
+  <g>
+    <!-- self (left) -->
+    <circle cx="-220" cy="50" r="32" fill="#F6C26B" opacity="0.92"/>
+    <text x="-220" y="60" text-anchor="middle" font-size="28" fill="#0E0D0C" font-weight="700">我</text>
+    <text x="-220" y="105" text-anchor="middle" font-size="11" fill="#857e75" letter-spacing="2">SELF</text>
+
+    <!-- mentor (top) -->
+    <circle cx="0" cy="-80" r="36" fill="#D8CFC4" opacity="0.92"/>
+    <text x="0" y="-70" text-anchor="middle" font-size="34">🧘</text>
+    <text x="0" y="-25" text-anchor="middle" font-size="11" fill="#857e75" letter-spacing="2">MENTOR</text>
+
+    <!-- role (right) -->
+    <circle cx="220" cy="50" r="32" fill="#B7352D" opacity="0.92"/>
+    <text x="220" y="62" text-anchor="middle" font-size="30">🎭</text>
+    <text x="220" y="105" text-anchor="middle" font-size="11" fill="#857e75" letter-spacing="2">ROLE</text>
+  </g>
+
+  <!-- Center candle -->
+  <g>
+    <ellipse cx="0" cy="20" rx="80" ry="100" fill="url(#flame)" opacity="0.85"/>
+    <rect x="-20" y="60" width="40" height="80" rx="3" fill="#E8A87C"/>
+    <ellipse cx="0" cy="60" rx="20" ry="6" fill="#3d3530"/>
+    <!-- Flame -->
+    <path d="M0,-30 Q-12,0 -8,20 Q0,28 8,20 Q12,0 0,-30 Z" fill="#fff3c4" opacity="0.95"/>
+    <path d="M0,-15 Q-6,5 -4,18 Q0,22 4,18 Q6,5 0,-15 Z" fill="#F6C26B"/>
+  </g>
+
+  <!-- Connecting lines (debate hint) -->
+  <g stroke="#E8B563" stroke-width="1" opacity="0.25" stroke-dasharray="3 5">
+    <line x1="-220" y1="50" x2="0" y2="-80"/>
+    <line x1="0" y1="-80" x2="220" y2="50"/>
+    <line x1="-220" y1="50" x2="220" y2="50"/>
+  </g>
+</g>
+
+<!-- Anchor sentence — the heart -->
+<g>
+  <text x="620" y="980" text-anchor="middle" font-size="42" font-weight="300" fill="#E8DCC4" letter-spacing="2">
+    ChatGPT 让 AI 认识全人类
+  </text>
+  <line x1="380" y1="1010" x2="860" y2="1010" stroke="#6b4a2b" stroke-width="1" opacity="0.6"/>
+  <text x="620" y="1080" text-anchor="middle" font-size="50" font-weight="500" fill="#F6C26B" letter-spacing="2">
+    Council 让 AI 认识你
+  </text>
+</g>
+
+<!-- Subtitle — what it actually is -->
+<g>
+  <text x="620" y="1190" text-anchor="middle" font-size="18" fill="#a8a299" letter-spacing="1">
+    把每次思考蒸馏成可召集的 persona
+  </text>
+  <text x="620" y="1220" text-anchor="middle" font-size="18" fill="#a8a299" letter-spacing="1">
+    让你的思想家们围坐一桌, 替你辩论
+  </text>
+</g>
+
+<!-- Three modalities -->
+<g transform="translate(0, 1340)">
+  <g>
+    <rect x="180" y="0" width="240" height="80" rx="8" fill="#1A1815" stroke="#6b4a2b" stroke-width="1"/>
+    <text x="300" y="32" text-anchor="middle" font-size="14" fill="#F6E27A" letter-spacing="2">CLI</text>
+    <text x="300" y="58" text-anchor="middle" font-size="11" fill="#857e75">是 Git</text>
+  </g>
+  <g>
+    <rect x="500" y="0" width="240" height="80" rx="8" fill="#1A1815" stroke="#E8B563" stroke-width="1.5"/>
+    <text x="620" y="32" text-anchor="middle" font-size="14" fill="#F6C26B" letter-spacing="2">WEB</text>
+    <text x="620" y="58" text-anchor="middle" font-size="11" fill="#a8a299">是 GitHub</text>
+  </g>
+  <g>
+    <rect x="820" y="0" width="240" height="80" rx="8" fill="#1A1815" stroke="#6b4a2b" stroke-width="1"/>
+    <text x="940" y="32" text-anchor="middle" font-size="14" fill="#F6E27A" letter-spacing="2">MCP</text>
+    <text x="940" y="58" text-anchor="middle" font-size="11" fill="#857e75">是协议层</text>
+  </g>
+</g>
+
+<!-- Bottom credit + tech -->
+<g>
+  <line x1="100" y1="1560" x2="1140" y2="1560" stroke="#3d3530" stroke-width="0.5"/>
+
+  <text x="100" y="1610" font-size="14" fill="#a8a299">— 墨宇 (Siyu Deng) · Build For Future · 红药丸</text>
+  <text x="100" y="1640" font-size="12" fill="#6b6259">Node 20+ · TypeScript · MCP Protocol · Anthropic Claude (Haiku 4.5) · Vite + React + Tailwind</text>
+
+  <text x="100" y="1700" font-size="12" fill="#857e75">github.com/moyu-build/council</text>
+  <text x="1140" y="1700" text-anchor="end" font-size="12" fill="#857e75">npm: @moyu-build/council</text>
+</g>
+
+</svg>

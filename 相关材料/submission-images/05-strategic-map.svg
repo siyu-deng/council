@@ -1,0 +1,130 @@
+<svg width="100%" viewBox="0 0 1240 1754" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, 'PingFang SC', system-ui, sans-serif">
+<title>Council 战略地图 · 在生态里的协同位置</title>
+
+<rect width="1240" height="1754" fill="#fafaf7"/>
+
+<!-- Header -->
+<g>
+  <text x="80" y="100" font-size="34" font-weight="700" fill="#141413">战略地图</text>
+  <text x="80" y="138" font-size="15" fill="#5d5d58">Council 不抢任何人地盘 — 它做所有人之上的协同层。</text>
+  <line x1="80" y1="160" x2="1160" y2="160" stroke="#141413" stroke-width="1.5"/>
+</g>
+
+<!-- 双轴坐标系 -->
+<g transform="translate(620, 740)">
+  <!-- Axes -->
+  <line x1="-460" y1="0" x2="460" y2="0" stroke="#3d3d3a" stroke-width="1.5"/>
+  <line x1="0" y1="-380" x2="0" y2="380" stroke="#3d3d3a" stroke-width="1.5"/>
+
+  <!-- Axis labels -->
+  <text x="-470" y="6" text-anchor="end" font-size="12" font-weight="600" fill="#5d5d58">主语 = AI</text>
+  <text x="470" y="6" text-anchor="start" font-size="12" font-weight="600" fill="#5d5d58">主语 = 人</text>
+  <text x="0" y="-395" text-anchor="middle" font-size="12" font-weight="600" fill="#5d5d58">单视角 / soloist</text>
+  <text x="0" y="408" text-anchor="middle" font-size="12" font-weight="600" fill="#5d5d58">多视角 / 议会式</text>
+
+  <!-- Quadrant tints -->
+  <rect x="-460" y="-380" width="460" height="380" fill="#e8eef5" opacity="0.3"/>
+  <rect x="0" y="-380" width="460" height="380" fill="#fff8e8" opacity="0.3"/>
+  <rect x="-460" y="0" width="460" height="380" fill="#eef5ee" opacity="0.3"/>
+  <rect x="0" y="0" width="460" height="380" fill="#fbf1e1" opacity="0.5"/>
+
+  <!-- Quadrant titles -->
+  <text x="-230" y="-360" text-anchor="middle" font-size="11" fill="#888" letter-spacing="2">象限 I · AI 单一进化</text>
+  <text x="230" y="-360" text-anchor="middle" font-size="11" fill="#888" letter-spacing="2">象限 II · 人单视角增强</text>
+  <text x="-230" y="395" text-anchor="middle" font-size="11" fill="#888" letter-spacing="2">象限 III · 多 AI Agent 系统</text>
+  <text x="230" y="395" text-anchor="middle" font-size="11" fill="#888" letter-spacing="2">象限 IV · 人主持的多视角议会</text>
+
+  <!-- Competitors -->
+  <g>
+    <!-- Evolver -->
+    <circle cx="-280" cy="-220" r="38" fill="#4a90c2" opacity="0.85"/>
+    <text x="-280" y="-216" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">Evolver</text>
+    <text x="-280" y="-160" text-anchor="middle" font-size="10" fill="#5d5d58">EvoMap · 6k stars</text>
+    <text x="-280" y="-145" text-anchor="middle" font-size="10" fill="#888" font-style="italic">Agent 自我进化</text>
+
+    <!-- Hermes -->
+    <circle cx="-180" cy="-100" r="36" fill="#4a90c2" opacity="0.85"/>
+    <text x="-180" y="-96" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">Hermes</text>
+    <text x="-180" y="-50" text-anchor="middle" font-size="10" fill="#5d5d58">Nous Research</text>
+    <text x="-180" y="-35" text-anchor="middle" font-size="10" fill="#888" font-style="italic">会成长的 AI 助手</text>
+
+    <!-- Second Me -->
+    <circle cx="-340" cy="-50" r="36" fill="#4a90c2" opacity="0.85"/>
+    <text x="-340" y="-46" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">Second Me</text>
+    <text x="-340" y="0" text-anchor="middle" font-size="10" fill="#5d5d58">14k stars</text>
+    <text x="-340" y="15" text-anchor="middle" font-size="10" fill="#888" font-style="italic">AI 数字分身</text>
+
+    <!-- 花叔 nuwa-skill -->
+    <circle cx="240" cy="-180" r="40" fill="#d8a040" opacity="0.85"/>
+    <text x="240" y="-184" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">花叔</text>
+    <text x="240" y="-170" text-anchor="middle" font-size="10" font-weight="600" fill="#fff">nuwa-skill</text>
+    <text x="240" y="-115" text-anchor="middle" font-size="10" fill="#5d5d58">蒸馏思想家</text>
+    <text x="240" y="-100" text-anchor="middle" font-size="10" fill="#888" font-style="italic">单 SKILL.md 召唤</text>
+
+    <!-- ChatGPT (reference) -->
+    <circle cx="-360" cy="-330" r="28" fill="#bbb" opacity="0.6"/>
+    <text x="-360" y="-326" text-anchor="middle" font-size="11" fill="#fff">ChatGPT</text>
+    <text x="-360" y="-285" text-anchor="middle" font-size="9" fill="#888" font-style="italic">认识全人类 · 不认识你</text>
+
+    <!-- Council ⭐ -->
+    <circle cx="280" cy="220" r="56" fill="#a06820" stroke="#5e3d10" stroke-width="3"/>
+    <text x="280" y="215" text-anchor="middle" font-size="20" font-weight="800" fill="#fff">Council</text>
+    <text x="280" y="238" text-anchor="middle" font-size="11" fill="#fbe8c8">★ 议会式</text>
+    <text x="280" y="295" text-anchor="middle" font-size="11" font-weight="600" fill="#5e3d10">主语是人 · 多视角辩论</text>
+    <text x="280" y="312" text-anchor="middle" font-size="10" fill="#7a4f15" font-style="italic">"我在主持自己的思想圆桌"</text>
+  </g>
+</g>
+
+<!-- Council 的协同箭头 -->
+<g transform="translate(620, 740)">
+  <!-- Curved arrows from Council reaching back to others -->
+  <path d="M 230 215 Q 100 100 -180 -64" fill="none" stroke="#a06820" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.5"/>
+  <path d="M 230 200 Q 50 50 -240 -100" fill="none" stroke="#a06820" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.5"/>
+  <path d="M 250 175 Q 150 0 -270 -180" fill="none" stroke="#a06820" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.5"/>
+  <path d="M 235 188 Q 240 40 240 -140" fill="none" stroke="#a06820" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.5"/>
+</g>
+
+<!-- 战略说明 (顶部 / 下方) -->
+<g>
+  <rect x="80" y="200" width="1080" height="120" rx="10" fill="#fff" stroke="#cdd6df"/>
+  <text x="100" y="232" font-size="14" font-weight="700" fill="#141413">坐标系 · 两个轴</text>
+  <text x="100" y="262" font-size="13" fill="#3d3d3a">横轴: 主语是 AI (左) → 主语是人 (右)。这是 Council 跟所有竞品最根本的区别。</text>
+  <text x="100" y="284" font-size="13" fill="#3d3d3a">纵轴: 单一视角的 soloist (上) → 多视角议会式辩论 (下)。Council 在右下象限独自一人。</text>
+  <text x="100" y="306" font-size="11" fill="#888" font-style="italic">虚线弧 = Council 消费每个对手的产出 (花叔的 SKILL.md → mentor / Hermes 的 skill → 能力模块 / Second Me 的模型 → self 槽)</text>
+</g>
+
+<!-- 战略结论 -->
+<g transform="translate(80, 1240)">
+  <rect x="0" y="0" width="1080" height="380" rx="12" fill="#141413"/>
+
+  <text x="540" y="55" text-anchor="middle" font-size="20" font-weight="700" fill="#F6C26B">⚡ Council 的位置 · 不抢谁地盘, 做所有人之上的协同层</text>
+
+  <g transform="translate(60, 100)">
+    <g>
+      <text x="0" y="20" font-size="14" font-weight="700" fill="#E8B563">兼容 SKILL.md 格式</text>
+      <text x="0" y="44" font-size="13" fill="#E8DCC4">花叔 nuwa-skill 的人物 skill 直接导入 → 成为 Council 的 mentor persona</text>
+    </g>
+    <g transform="translate(0, 65)">
+      <text x="0" y="20" font-size="14" font-weight="700" fill="#E8B563">兼容 MCP 协议</text>
+      <text x="0" y="44" font-size="13" fill="#E8DCC4">Hermes / Evolver 蒸馏的 skill → 作为 Council 的能力模块</text>
+    </g>
+    <g transform="translate(0, 130)">
+      <text x="0" y="20" font-size="14" font-weight="700" fill="#E8B563">兼容个人模型</text>
+      <text x="0" y="44" font-size="13" fill="#E8DCC4">Second Me 训练出的私人模型 → 占用 Council 的 self persona 槽</text>
+    </g>
+    <g transform="translate(0, 195)">
+      <text x="0" y="20" font-size="14" font-weight="700" fill="#E8B563">兼容 AGENTS.md 标准</text>
+      <text x="0" y="44" font-size="13" fill="#E8DCC4">任何 agent 客户端 (Claude Desktop / Cursor / Cherry / 飞书) 都能调 council_convene</text>
+    </g>
+  </g>
+
+  <line x1="80" y1="335" x2="1000" y2="335" stroke="#3a2f26" stroke-dasharray="2 4"/>
+  <text x="540" y="362" text-anchor="middle" font-size="14" font-style="italic" fill="#F6E27A">Council 让所有既有玩家变得更有用 — 这不是竞争位置, 是协同位置。</text>
+</g>
+
+<!-- Footer -->
+<text x="620" y="1700" text-anchor="middle" font-size="11" fill="#888" font-style="italic">
+  ★ "你不和既有玩家正面冲突, 你提供让既有玩家变得更有用的上层抽象。" — 纳瓦尔式位置
+</text>
+
+</svg>

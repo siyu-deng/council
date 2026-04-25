@@ -27,7 +27,7 @@ export async function exportCommand(opts: { mcp?: boolean }): Promise<void> {
     JSON.stringify(
       {
         name: "council-mcp",
-        version: "0.1.0",
+        version: "0.1.1",
         private: true,
         description: "Council MCP server export",
       },
