@@ -209,12 +209,49 @@ export interface SkillFrontmatter {
   confidence: number;
   created_at: string;
   promoted_to_persona?: string;
+  /** 文件名 slug (从 title 派生, 与 id 解耦, 便于人眼浏览) */
+  slug?: string;
+}
+
+/**
+ * 把 highlight 的 title 转成文件名 slug.
+ * 中文保留, 拉丁字母小写, 其它符号 → "-".
+ */
+export function slugifyTitle(title: string): string {
+  return title
+    .trim()
+    .toLowerCase()
+    .replace(/[^\w一-龥]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+}
+
+/**
+ * 找一个 skills/ 下不冲突的文件名。
+ * 优先 `<slug>.md`, 撞名则 `<slug>-2.md`, `<slug>-3.md`...
+ */
+function uniqueSkillFilename(slug: string): string {
+  ensureDir(paths.skills());
+  const dir = paths.skills();
+  let candidate = `${slug}.md`;
+  let i = 2;
+  while (existsSync(join(dir, candidate))) {
+    candidate = `${slug}-${i}.md`;
+    i++;
+  }
+  return candidate;
 }
 
 export function writeSkill(data: SkillFrontmatter, body: string): string {
   ensureDir(paths.skills());
-  const filePath = join(paths.skills(), `${data.id}.md`);
-  writeMd(filePath, data, body);
+  // 优先用 title slug 命名 (人类可读); 退化用 id (旧行为)
+  let slug = data.slug;
+  if (!slug && data.title) slug = slugifyTitle(data.title);
+  const filename = slug ? uniqueSkillFilename(slug) : `${data.id}.md`;
+  const filePath = join(paths.skills(), filename);
+  // 把最终 slug 写回 frontmatter, 方便后续追踪
+  const finalSlug = slug ?? data.id;
+  writeMd(filePath, { ...data, slug: finalSlug }, body);
   return filePath;
 }
 
@@ -232,6 +269,13 @@ export function listSkills(): Array<{ data: SkillFrontmatter; body: string; file
     }
   }
   return out;
+}
+
+export function getSkill(id: string): { data: SkillFrontmatter; body: string; filePath: string } | null {
+  for (const s of listSkills()) {
+    if (s.data.id === id) return s;
+  }
+  return null;
 }
 
 // —————————————————— transcripts ——————————————————

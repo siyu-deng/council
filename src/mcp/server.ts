@@ -15,6 +15,10 @@ import {
   getPersona,
   writeSession,
   readIdentity,
+  listSessions,
+  getSession,
+  listSkills,
+  getSkill,
   type SessionFrontmatter,
 } from "../core/skill-md.ts";
 import { distillOne } from "../engine/distill.ts";
@@ -22,6 +26,8 @@ import { convene } from "../engine/convene.ts";
 import { streamStatement } from "../prompts/P4-statement.ts";
 import { shouldCapture } from "../prompts/P10-should-capture.ts";
 import { bootstrapIdentity } from "../prompts/P11-bootstrap-identity.ts";
+import { refineCommand } from "../commands/refine.ts";
+import { evolveCommand } from "../commands/evolve.ts";
 import { isInitialized, paths } from "../core/paths.ts";
 import { writeMd } from "../core/frontmatter.ts";
 import { readState } from "../engine/distill.ts";
@@ -84,6 +90,207 @@ server.registerTool(
               .join("\n"),
         },
       ],
+    };
+  },
+);
+
+// ━━━ council_list_sessions ━━━
+server.registerTool(
+  "council_list_sessions",
+  {
+    description:
+      "列出所有已捕获的 session (按时间倒序), 每条含 id / title / 是否已蒸馏 / 产出的 highlight 数. Web 端做 session 列表渲染时调它.",
+    inputSchema: {},
+  },
+  async () => {
+    requireInit();
+    const sessions = listSessions();
+    const state = readState();
+    if (sessions.length === 0) {
+      return { content: [{ type: "text" as const, text: "尚未捕获任何 session." }] };
+    }
+    const rows = sessions.map((s) => {
+      const fm = s.frontmatter;
+      const hl = state.sessions[fm.id]?.highlight_ids.length ?? 0;
+      return `- **${fm.id}** · ${fm.title ?? "(无标题)"} · ${fm.source} · ${fm.distilled ? `${hl} highlights` : "未蒸馏"}`;
+    });
+    return {
+      content: [
+        {
+          type: "text" as const,
+          text: `共 ${sessions.length} 个 session:\n\n${rows.join("\n")}`,
+        },
+      ],
+    };
+  },
+);
+
+// ━━━ council_get_session ━━━
+server.registerTool(
+  "council_get_session",
+  {
+    description:
+      "查看一个 session 的完整内容 + 它产出的 highlights + 这些 highlights 加入了哪些 self persona. 用于追溯某个观点的来源 ('这个 self persona 是怎么来的?').",
+    inputSchema: {
+      id: z.string().describe("session id, 形如 2026-04-25-xxx"),
+    },
+  },
+  async ({ id }) => {
+    requireInit();
+    let session;
+    try {
+      session = getSession(id);
+    } catch {
+      return {
+        content: [{ type: "text" as const, text: `找不到 session: ${id}` }],
+      };
+    }
+    const state = readState();
+    const skills = listSkills();
+    const skillMap = new Map(skills.map((s) => [s.data.id, s]));
+    const hlToPersona = new Map<string, string>();
+    for (const [name, rec] of Object.entries(state.personas)) {
+      for (const hid of rec.source_highlights) {
+        hlToPersona.set(hid, `self:${name}`);
+      }
+    }
+
+    const lines = [
+      `# Session ${id}`,
+      "",
+      `- **title**: ${session.frontmatter.title ?? "(无)"}`,
+      `- **captured**: ${session.frontmatter.captured_at}`,
+      `- **source**: ${session.frontmatter.source}`,
+      `- **distilled**: ${session.frontmatter.distilled ? "✓" : "✗"}`,
+      "",
+    ];
+    const sessionRec = state.sessions[id];
+    if (sessionRec && sessionRec.highlight_ids.length > 0) {
+      lines.push(`## 产出 ${sessionRec.highlight_ids.length} 个 highlight`);
+      lines.push("");
+      for (const hid of sessionRec.highlight_ids) {
+        const sk = skillMap.get(hid);
+        if (!sk) continue;
+        const persona = hlToPersona.get(hid);
+        const pTag = persona ? ` → ${persona}` : " (未并入 persona)";
+        lines.push(
+          `- **${sk.data.title}** [${sk.data.type}, conf=${sk.data.confidence.toFixed(2)}]${pTag}`,
+        );
+      }
+      lines.push("");
+    }
+    lines.push("## 对话原文");
+    lines.push("");
+    lines.push(session.body);
+
+    return {
+      content: [{ type: "text" as const, text: lines.join("\n") }],
+    };
+  },
+);
+
+// ━━━ council_list_skills ━━━
+server.registerTool(
+  "council_list_skills",
+  {
+    description:
+      "列出所有 skill (highlight). 可按 type 过滤 (problem-reframing / decision-heuristic / boundary-response / meta-insight). 每条含 title / source / 是否已加入 persona.",
+    inputSchema: {
+      type: z
+        .string()
+        .optional()
+        .describe(
+          "可选: problem-reframing / decision-heuristic / boundary-response / meta-insight",
+        ),
+    },
+  },
+  async ({ type }) => {
+    requireInit();
+    const all = listSkills();
+    const filtered = type ? all.filter((s) => s.data.type === type) : all;
+    if (filtered.length === 0) {
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: type ? `没有 type=${type} 的 skill` : "尚无 skill",
+          },
+        ],
+      };
+    }
+    const state = readState();
+    const hlToPersona = new Map<string, string>();
+    for (const [name, rec] of Object.entries(state.personas)) {
+      for (const hid of rec.source_highlights) {
+        hlToPersona.set(hid, `self:${name}`);
+      }
+    }
+    const byType = new Map<string, typeof filtered>();
+    for (const s of filtered) {
+      const arr = byType.get(s.data.type) ?? [];
+      arr.push(s);
+      byType.set(s.data.type, arr);
+    }
+    const lines: string[] = [`共 ${filtered.length} 个 skill${type ? ` [type=${type}]` : ""}:`];
+    for (const [t, items] of byType) {
+      items.sort((a, b) => b.data.confidence - a.data.confidence);
+      lines.push("");
+      lines.push(`## ${t} (${items.length})`);
+      for (const s of items) {
+        const persona = hlToPersona.get(s.data.id);
+        const pTag = persona ? ` → ${persona}` : "";
+        lines.push(
+          `- **${s.data.title}** (conf=${s.data.confidence.toFixed(2)}, src=${s.data.source_session})${pTag}`,
+        );
+      }
+    }
+    return {
+      content: [{ type: "text" as const, text: lines.join("\n") }],
+    };
+  },
+);
+
+// ━━━ council_get_skill ━━━
+server.registerTool(
+  "council_get_skill",
+  {
+    description:
+      "查看单个 skill (highlight) 的完整内容 (含原话引用、底层信念、why_non_trivial 等). 接受 id 或 slug.",
+    inputSchema: {
+      id_or_slug: z
+        .string()
+        .describe("skill 的 id (如 2026-04-25-xxx-h1) 或 slug (从 title 派生)"),
+    },
+  },
+  async ({ id_or_slug }) => {
+    requireInit();
+    let s = getSkill(id_or_slug);
+    if (!s) {
+      const all = listSkills();
+      s = all.find((x) => x.data.slug === id_or_slug) ?? null;
+    }
+    if (!s) {
+      return {
+        content: [{ type: "text" as const, text: `找不到 skill: ${id_or_slug}` }],
+      };
+    }
+    const fm = s.data;
+    const lines = [
+      `# ${fm.title}`,
+      "",
+      `- **type**: ${fm.type}`,
+      `- **confidence**: ${fm.confidence}`,
+      `- **source**: ${fm.source_session}`,
+      `- **id**: ${fm.id}`,
+      `- **slug**: ${fm.slug ?? "(无)"}`,
+    ];
+    if (fm.promoted_to_persona) {
+      lines.push(`- **promoted_to**: ${fm.promoted_to_persona}`);
+    }
+    lines.push("");
+    lines.push(s.body);
+    return {
+      content: [{ type: "text" as const, text: lines.join("\n") }],
     };
   },
 );
@@ -273,6 +480,97 @@ server.registerTool(
         },
       ],
     };
+  },
+);
+
+// ━━━ council_refine ━━━
+server.registerTool(
+  "council_refine",
+  {
+    description:
+      "用累积的新 highlights 深化已有 self persona。不传 persona_ref 会扫所有 self persona 一次性 refine。LLM 模式下完全非交互: 自动采纳 reinforce/enrich (覆盖原文件 + 升 version), contradict 自动写为 -draft.md (不污染主文件). 返回每个 persona 的判定细节.",
+    inputSchema: {
+      persona_ref: z
+        .string()
+        .optional()
+        .describe(
+          "可选: 指定要 refine 的 persona ref (如 self:reframe-before-execute). 不传则全扫.",
+        ),
+    },
+  },
+  async ({ persona_ref }) => {
+    requireInit();
+    const result = await refineCommand(persona_ref, {
+      yes: true,
+      silent: true,
+    });
+    const lines: string[] = [];
+    lines.push(
+      `# Refine 完毕\n\n处理 ${result.processed} 个 persona: 采纳 ${result.applied}, 写 draft ${result.drafted}, 跳过 ${result.skipped}.`,
+    );
+    for (const d of result.details) {
+      lines.push("");
+      lines.push(`## ${d.persona} → ${d.outcome.toUpperCase()}`);
+      if (d.action) lines.push(`- action: ${d.action}`);
+      if (d.rationale) lines.push(`- rationale: ${d.rationale}`);
+      if (d.skip_reason) lines.push(`- skip_reason: ${d.skip_reason}`);
+      if (d.new_highlights !== undefined)
+        lines.push(`- 吸收 ${d.new_highlights} 个新 highlight`);
+      if (d.old_description && d.new_description) {
+        lines.push(`- description: "${d.old_description}" → "${d.new_description}"`);
+      }
+      if (d.old_confidence !== undefined && d.new_confidence !== undefined) {
+        lines.push(
+          `- confidence: ${d.old_confidence.toFixed(2)} → ${d.new_confidence.toFixed(2)}`,
+        );
+      }
+      if (d.conflict_note) lines.push(`- conflict: ${d.conflict_note}`);
+    }
+    return { content: [{ type: "text" as const, text: lines.join("\n") }] };
+  },
+);
+
+// ━━━ council_evolve ━━━
+server.registerTool(
+  "council_evolve",
+  {
+    description:
+      "扫描 persona 健康状况: (1) 把 score < 0.3 且收到 ≥3 次反馈的 persona 归档为 stale. (2) 检测高重叠的 self persona 提示合并. 返回总数 / 归档数 / 合并建议.",
+    inputSchema: {},
+  },
+  async () => {
+    requireInit();
+    const result = await evolveCommand();
+    const lines: string[] = [];
+    lines.push(`# 进化扫描完毕`);
+    lines.push("");
+    lines.push(`- 总 persona: ${result.total_personas}`);
+    lines.push(`- 归档为 stale: ${result.staled.length}`);
+    lines.push(`- 合并建议: ${result.merge_suggestions.length}`);
+    if (result.staled.length > 0) {
+      lines.push("");
+      lines.push("## Stale (已归档)");
+      for (const s of result.staled) {
+        lines.push(
+          `- ${s.ref} (score=${s.score.toFixed(2)}, ${s.feedback_count} 反馈)`,
+        );
+      }
+    }
+    if (result.merge_suggestions.length > 0) {
+      lines.push("");
+      lines.push("## 合并建议");
+      for (const m of result.merge_suggestions) {
+        lines.push(
+          `- ${m.a} + ${m.b} (overlap=${m.overlap.toFixed(2)}, ${m.reason})`,
+        );
+      }
+      lines.push("");
+      lines.push("→ 通过 CLI 合并: `council merge <a> <b>`");
+    } else {
+      lines.push("");
+      lines.push("→ 没有明显重叠, 库很健康.");
+    }
+    return { content: [{ type: "text" as const, text: lines.join("\n") }] };
   },
 );
 

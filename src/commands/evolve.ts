@@ -7,13 +7,19 @@ import { writeMd } from "../core/frontmatter.ts";
 const STALE_THRESHOLD = 0.3;
 const MIN_FEEDBACK_FOR_STALE = 3;
 
-export async function evolveCommand(): Promise<void> {
+export interface EvolveResult {
+  total_personas: number;
+  staled: Array<{ ref: string; score: number; feedback_count: number }>;
+  merge_suggestions: Array<{ a: string; b: string; overlap: number; reason: string }>;
+}
+
+export async function evolveCommand(): Promise<EvolveResult> {
   if (!isInitialized()) throw new NotInitializedError();
 
   log.heading("扫描 persona 健康状况...");
 
   const personas = listPersonas();
-  let staleCount = 0;
+  const staled: EvolveResult["staled"] = [];
 
   // ——— 1. Stale detection ———
   for (const p of personas) {
@@ -33,14 +39,14 @@ export async function evolveCommand(): Promise<void> {
         fm,
         p.body,
       );
-      staleCount++;
+      staled.push({ ref: p.ref, score, feedback_count: fb.length });
       log.warn(
         `  stale: ${c.bold(p.ref)} (score=${score.toFixed(2)}, ${fb.length} 反馈)`,
       );
     }
   }
 
-  if (staleCount === 0) log.muted(`  所有 persona 健康, 无 stale`);
+  if (staled.length === 0) log.muted(`  所有 persona 健康, 无 stale`);
 
   // ——— 2. Merge suggestions (cheap: overlap by source_sessions) ———
   log.section("检测潜在合并...");
@@ -72,8 +78,18 @@ export async function evolveCommand(): Promise<void> {
 
   log.section("健康报告");
   log.plain(`  总 persona: ${personas.length}`);
-  log.plain(`  归档为 stale: ${staleCount}`);
+  log.plain(`  归档为 stale: ${staled.length}`);
   log.plain(`  建议合并: ${suggestions.length}`);
+  return {
+    total_personas: personas.length,
+    staled,
+    merge_suggestions: suggestions.map((s) => ({
+      a: s.a.ref,
+      b: s.b.ref,
+      overlap: s.overlap,
+      reason: s.reason,
+    })),
+  };
 }
 
 function simpleOverlap(

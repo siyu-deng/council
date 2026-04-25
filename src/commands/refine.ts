@@ -14,40 +14,64 @@ import { refinePersona } from "../prompts/P9-refine-persona.ts";
 import { readState, writeState, type StoredHighlight } from "../engine/distill.ts";
 import type { HighlightType } from "../prompts/P1-identify-highlights.ts";
 
-interface RefineOpts {
+export interface RefineOpts {
   yes?: boolean; // --yes 跳过交互, 自动采纳 reinforce/enrich (contradict 仍写 draft 不污染主文件)
+  silent?: boolean; // 无任何交互 (MCP 用), contradict 也直接写 draft
+}
+
+export interface RefineDetail {
+  persona: string;
+  outcome: "applied" | "drafted" | "skipped";
+  action?: "reinforce" | "enrich" | "contradict";
+  rationale?: string;
+  old_description?: string;
+  new_description?: string;
+  old_confidence?: number;
+  new_confidence?: number;
+  new_highlights?: number;
+  skip_reason?: string;
+  conflict_note?: string;
+}
+
+export interface RefineResult {
+  processed: number;
+  applied: number;
+  drafted: number;
+  skipped: number;
+  details: RefineDetail[];
 }
 
 export async function refineCommand(
   personaRef: string | undefined,
   opts: RefineOpts = {},
-): Promise<void> {
+): Promise<RefineResult> {
   if (!isInitialized()) throw new NotInitializedError();
 
   const targets = await pickTargets(personaRef);
   if (targets.length === 0) {
     log.muted("没有可 refine 的 self persona");
-    return;
+    return { processed: 0, applied: 0, drafted: 0, skipped: 0, details: [] };
   }
 
-  let processed = 0;
+  const details: RefineDetail[] = [];
   let applied = 0;
   let skipped = 0;
   let drafted = 0;
 
   for (const p of targets) {
     log.section(`refine ${p.ref}`);
-    const result = await refineOne(p, opts);
-    processed++;
-    if (result === "applied") applied++;
-    else if (result === "drafted") drafted++;
+    const detail = await refineOne(p, opts);
+    details.push(detail);
+    if (detail.outcome === "applied") applied++;
+    else if (detail.outcome === "drafted") drafted++;
     else skipped++;
   }
 
   log.plain("");
   log.success(
-    `refine 完毕: 处理 ${processed} 个, 采纳 ${applied}, 草稿 ${drafted}, 跳过 ${skipped}`,
+    `refine 完毕: 处理 ${details.length} 个, 采纳 ${applied}, 草稿 ${drafted}, 跳过 ${skipped}`,
   );
+  return { processed: details.length, applied, drafted, skipped, details };
 }
 
 async function pickTargets(personaRef: string | undefined): Promise<Persona[]> {
@@ -62,16 +86,18 @@ async function pickTargets(personaRef: string | undefined): Promise<Persona[]> {
   return listPersonas().filter((p) => p.frontmatter.type === "self");
 }
 
-type RefineOutcome = "applied" | "drafted" | "skipped";
-
-async function refineOne(persona: Persona, opts: RefineOpts): Promise<RefineOutcome> {
+async function refineOne(persona: Persona, opts: RefineOpts): Promise<RefineDetail> {
   const state = readState();
   const stored = state.personas[persona.frontmatter.name];
   if (!stored) {
     log.warn(
       `  ↷ 跳过: ${persona.ref} 不在 distilled.json (可能是 handcrafted, 不可 refine)`,
     );
-    return "skipped";
+    return {
+      persona: persona.ref,
+      outcome: "skipped",
+      skip_reason: "不在 distilled.json (可能是 handcrafted)",
+    };
   }
 
   const oldIds = new Set(stored.source_highlights);
@@ -81,7 +107,11 @@ async function refineOne(persona: Persona, opts: RefineOpts): Promise<RefineOutc
 
   if (oldHighlights.length === 0) {
     log.warn(`  ↷ 跳过: 找不到 ${persona.ref} 的源 highlights`);
-    return "skipped";
+    return {
+      persona: persona.ref,
+      outcome: "skipped",
+      skip_reason: "找不到源 highlights",
+    };
   }
 
   // 推断该 persona 的主 type (P2 按 type 聚类, 应该全是同一种)
@@ -94,7 +124,11 @@ async function refineOne(persona: Persona, opts: RefineOpts): Promise<RefineOutc
 
   if (candidates.length === 0) {
     log.muted(`  ↷ 无新 highlights (type=${type}), 跳过`);
-    return "skipped";
+    return {
+      persona: persona.ref,
+      outcome: "skipped",
+      skip_reason: `无新 highlights (type=${type})`,
+    };
   }
 
   log.muted(`  发现 ${candidates.length} 个新 highlights (type=${type}):`);
@@ -111,7 +145,11 @@ async function refineOne(persona: Persona, opts: RefineOpts): Promise<RefineOutc
     );
   } catch (err) {
     sp.fail(`  refine 失败: ${String(err)}`);
-    return "skipped";
+    return {
+      persona: persona.ref,
+      outcome: "skipped",
+      skip_reason: `refine 失败: ${String(err).slice(0, 200)}`,
+    };
   }
   sp.succeed(`  P9 判定: ${actionEmoji(refined.action)} ${c.bold(refined.action)}`);
 
@@ -144,14 +182,21 @@ async function refineOne(persona: Persona, opts: RefineOpts): Promise<RefineOutc
     : `  采纳并覆盖 ${persona.ref}? (y/N) > `;
 
   let ans = "y";
-  if (!opts.yes || isContradict) {
+  // silent 模式: 完全不交互, 全部自动执行 (contradict → draft, 其他 → 覆盖)
+  // yes 模式: 交互但 reinforce/enrich 自动 yes; contradict 仍然问
+  if (!opts.silent && (!opts.yes || isContradict)) {
     const rl = readline.createInterface({ input: stdin, output: stdout });
     ans = (await rl.question(promptText)).trim().toLowerCase();
     rl.close();
   }
   if (ans !== "y") {
     log.muted("  已取消");
-    return "skipped";
+    return {
+      persona: persona.ref,
+      outcome: "skipped",
+      action: refined.action,
+      skip_reason: "用户取消",
+    };
   }
 
   // —— 写文件 ——
@@ -170,11 +215,23 @@ async function refineOne(persona: Persona, opts: RefineOpts): Promise<RefineOutc
     source_sessions: newSourceSessions,
   };
 
+  const baseDetail = {
+    persona: persona.ref,
+    action: refined.action,
+    rationale: refined.rationale,
+    old_description: persona.frontmatter.description,
+    new_description: refined.new_description,
+    old_confidence: persona.frontmatter.confidence,
+    new_confidence: refined.new_confidence,
+    new_highlights: candidates.length,
+    conflict_note: refined.conflict_note,
+  };
+
   if (isContradict) {
     writePersona("self", fm, refined.new_body, { draft: true });
     log.warn(`  📝 写入 ${persona.frontmatter.name}-draft.md (原文件未动)`);
     log.muted("  请手工 review, 决定要不要替换主文件");
-    return "drafted";
+    return { ...baseDetail, outcome: "drafted" };
   }
 
   writePersona("self", fm, refined.new_body);
@@ -188,7 +245,7 @@ async function refineOne(persona: Persona, opts: RefineOpts): Promise<RefineOutc
   log.success(
     `  ✓ ${persona.ref} v${fm.version} (合并 ${candidates.length} 个新 highlight)`,
   );
-  return "applied";
+  return { ...baseDetail, outcome: "applied" };
 }
 
 function actionEmoji(a: string): string {

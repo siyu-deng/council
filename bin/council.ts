@@ -15,6 +15,8 @@ import { feedbackCommand } from "../src/commands/feedback.ts";
 import { evolveCommand } from "../src/commands/evolve.ts";
 import { mergeCommand } from "../src/commands/merge.ts";
 import { refineCommand } from "../src/commands/refine.ts";
+import { sessionListCommand, sessionShowCommand } from "../src/commands/session.ts";
+import { skillListCommand, skillShowCommand } from "../src/commands/skill.ts";
 import { statusCommand } from "../src/commands/status.ts";
 import { exportCommand } from "../src/commands/export.ts";
 import { serveCommand } from "../src/commands/serve.ts";
@@ -138,6 +140,37 @@ program
   .option("-y, --yes", "自动采纳 reinforce/enrich (contradict 仍写 draft 不污染主文件)")
   .action(async (personaRef, opts) => {
     await refineCommand(personaRef, opts);
+  });
+
+// ━━━ session ━━━
+const session = program.command("session").description("session 管理 (摄入的对话)");
+session
+  .command("list")
+  .description("列出所有 session")
+  .action(async () => {
+    await sessionListCommand();
+  });
+session
+  .command("show <id>")
+  .description("查看某个 session 详情 (含产出的 highlights + 加入的 personas)")
+  .action(async (id) => {
+    await sessionShowCommand(id);
+  });
+
+// ━━━ skill ━━━
+const skill = program.command("skill").description("skill 管理 (蒸馏出的 highlights)");
+skill
+  .command("list")
+  .description("列出所有 skill, 按 type 分组")
+  .option("-t, --type <type>", "只列某个 type (problem-reframing/decision-heuristic/...)")
+  .action(async (opts) => {
+    await skillListCommand(opts);
+  });
+skill
+  .command("show <idOrSlug>")
+  .description("查看某个 skill 详情 (id / slug / title 都行)")
+  .action(async (id) => {
+    await skillShowCommand(id);
   });
 
 // ━━━ export / serve ━━━
