@@ -15,6 +15,7 @@ import { feedbackCommand } from "../src/commands/feedback.ts";
 import { evolveCommand } from "../src/commands/evolve.ts";
 import { mergeCommand } from "../src/commands/merge.ts";
 import { refineCommand } from "../src/commands/refine.ts";
+import { statusCommand } from "../src/commands/status.ts";
 import { exportCommand } from "../src/commands/export.ts";
 import { serveCommand } from "../src/commands/serve.ts";
 
@@ -32,6 +33,14 @@ program
   .option("-f, --force", "覆盖已有初始化")
   .action(async (opts) => {
     await initCommand(opts);
+  });
+
+// ━━━ status ━━━
+program
+  .command("status")
+  .description("一眼看清: 已 capture 多少 session / 蒸出多少 persona / 跑过多少议会")
+  .action(async () => {
+    await statusCommand();
   });
 
 // ━━━ capture ━━━

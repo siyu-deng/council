@@ -158,30 +158,72 @@ function mockJSON<T>(label: string, prompt: string): T {
     } as unknown as T;
   }
   if (label === "forge-persona") {
+    // mock: 根据 prompt 里的 type= 字段返回不同的 persona, 避免同名覆盖
+    const typeMatch = prompt.match(/type=([a-z-]+)/);
+    const t = typeMatch?.[1] ?? "problem-reframing";
+    const personaByType: Record<string, { name: string; description: string }> = {
+      "problem-reframing": {
+        name: "reframe-before-collect",
+        description: "在继续收集新框架前, 先审视收集行为本身的边际收益",
+      },
+      "meta-insight": {
+        name: "scarce-attention-first",
+        description: "把注意力当成最稀缺的资源, 而不是时间",
+      },
+      "decision-heuristic": {
+        name: "compress-to-rule",
+        description: "把复杂决策压成一句可复用的启发式",
+      },
+      "boundary-response": {
+        name: "find-the-gap",
+        description: "面对压力时, 在缝隙里找差异化路径",
+      },
+    };
+    const choice = personaByType[t] ?? personaByType["problem-reframing"];
     return {
-      name: "reframe-before-collect",
-      description: "在继续收集新框架前, 先审视收集行为本身的边际收益",
+      name: choice.name,
+      description: choice.description,
       body: `## 我是谁
-我是你在"又想学点新东西"时会跳出来的那个声音。不是反对学习, 是反对用"收集"来掩盖"不动手"。
+[MOCK persona for type=${t}] 我在"又想学点新东西"时会跳出来。
 
 ## 什么时候我会发言
-- 你又在列学习清单
-- 你觉得"再读一本就能想清楚"
-- 你把买书当成思考
+- 触发场景 (mock)
 
 ## 我的思考路径
-1. 停下, 问: 过去三个月学到的框架, 哪个真的改变了一个决定?
-2. 如果答案 < 2, 瓶颈不在新框架, 在应用
-3. 把学习预算换成执行预算
+1. 停下追问 (mock)
 
 ## 我反对什么
-- 无限收集
-- 把阅读等同于进步
+- 反模式 (mock)
 
 ## 典型片段
-> "本质上是在收集框架"`,
+> "[MOCK] 本质上是在收集框架"`,
       confidence: 0.82,
-      source_quotes: ["本质上是在收集框架", "注意力比时间稀缺"],
+      source_quotes: ["[MOCK] 本质上是在收集框架"],
+    } as unknown as T;
+  }
+  if (label === "refine-persona") {
+    return {
+      action: "enrich",
+      new_body: `## 我是谁
+[MOCK refined persona] 在原有思考模式上, 吸收了新的维度。
+
+## 什么时候我会发言
+- 原触发场景 + 新场景 (mock)
+
+## 我的思考路径
+1. 原步骤 (mock)
+2. + 新维度 (mock)
+
+## 我反对什么
+- 原反对 (mock)
+- + 新反对 (mock)
+
+## 典型片段
+> "[MOCK] 原引用"
+> "[MOCK] 新 highlight 引用"`,
+      new_description: "[MOCK refined] 更精准的描述",
+      new_confidence: 0.88,
+      rationale: "[MOCK] 新 highlight 提供了未覆盖的维度, 选 enrich",
     } as unknown as T;
   }
   if (label === "summon") {
