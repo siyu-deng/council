@@ -369,6 +369,144 @@ async function handleApi(req: Request, url: URL): Promise<Response> {
     return json({ personas: rows });
   }
 
+  // GET /api/sessions — 列出所有 capture 过的 session (按时间倒序)
+  if (url.pathname === "/api/sessions" && req.method === "GET") {
+    const { listSessions } = await import("../core/skill-md.ts");
+    const { readState } = await import("../engine/distill.ts");
+    const sessions = listSessions();
+    const state = readState();
+    const rows = sessions.map((s) => {
+      const fm = s.frontmatter;
+      const hl = state.sessions[fm.id]?.highlight_ids.length ?? 0;
+      return {
+        id: fm.id,
+        title: fm.title,
+        captured_at: fm.captured_at,
+        source: fm.source,
+        distilled: fm.distilled,
+        highlight_count: hl,
+      };
+    });
+    return json({ sessions: rows });
+  }
+
+  // GET /api/sessions/:id — 单 session 详情 + 关联 highlights
+  const sessionMatch = url.pathname.match(/^\/api\/sessions\/([^/]+)$/);
+  if (sessionMatch && req.method === "GET") {
+    const id = decodeURIComponent(sessionMatch[1]);
+    const { getSession, listSkills } = await import("../core/skill-md.ts");
+    const { readState } = await import("../engine/distill.ts");
+    try {
+      const s = getSession(id);
+      const state = readState();
+      const sessRec = state.sessions[id];
+      const skillMap = new Map(listSkills().map((sk) => [sk.data.id, sk]));
+      const hlToPersona = new Map<string, string>();
+      for (const [name, rec] of Object.entries(state.personas)) {
+        for (const hid of rec.source_highlights) hlToPersona.set(hid, `self:${name}`);
+      }
+      const highlights = (sessRec?.highlight_ids ?? [])
+        .map((hid) => {
+          const sk = skillMap.get(hid);
+          if (!sk) return null;
+          return {
+            id: sk.data.id,
+            slug: sk.data.slug,
+            title: sk.data.title,
+            type: sk.data.type,
+            confidence: sk.data.confidence,
+            promoted_to_persona: hlToPersona.get(hid),
+          };
+        })
+        .filter(Boolean);
+      return json({
+        id: s.frontmatter.id,
+        title: s.frontmatter.title,
+        captured_at: s.frontmatter.captured_at,
+        source: s.frontmatter.source,
+        distilled: s.frontmatter.distilled,
+        body: s.body,
+        highlights,
+      });
+    } catch (err) {
+      return json({ error: String(err) }, 404);
+    }
+  }
+
+  // GET /api/skills — 列出所有 highlights, 可按 type 过滤
+  if (url.pathname === "/api/skills" && req.method === "GET") {
+    const { listSkills } = await import("../core/skill-md.ts");
+    const { readState } = await import("../engine/distill.ts");
+    const type = url.searchParams.get("type") ?? undefined;
+    const all = listSkills();
+    const filtered = type ? all.filter((s) => s.data.type === type) : all;
+    const state = readState();
+    const hlToPersona = new Map<string, string>();
+    for (const [name, rec] of Object.entries(state.personas)) {
+      for (const hid of rec.source_highlights) hlToPersona.set(hid, `self:${name}`);
+    }
+    const rows = filtered
+      .sort((a, b) => b.data.confidence - a.data.confidence)
+      .map((sk) => ({
+        id: sk.data.id,
+        slug: sk.data.slug,
+        title: sk.data.title,
+        type: sk.data.type,
+        confidence: sk.data.confidence,
+        source_session: sk.data.source_session,
+        promoted_to_persona: hlToPersona.get(sk.data.id),
+      }));
+    return json({ skills: rows });
+  }
+
+  // GET /api/skills/:idOrSlug — 单 highlight 详情
+  const skillMatch = url.pathname.match(/^\/api\/skills\/([^/]+)$/);
+  if (skillMatch && req.method === "GET") {
+    const idOrSlug = decodeURIComponent(skillMatch[1]);
+    const { getSkill, listSkills } = await import("../core/skill-md.ts");
+    let sk = getSkill(idOrSlug);
+    if (!sk) {
+      const all = listSkills();
+      sk = all.find((x) => x.data.slug === idOrSlug) ?? null;
+    }
+    if (!sk) return json({ error: "not found" }, 404);
+    return json({ ...sk.data, body: sk.body });
+  }
+
+  // GET /api/transcripts — 列出所有议会记录
+  if (url.pathname === "/api/transcripts" && req.method === "GET") {
+    const { listTranscripts } = await import("../core/skill-md.ts");
+    const rows = listTranscripts().map((t) => ({
+      id: t.data.id,
+      question: t.data.question,
+      convened_at: t.data.convened_at,
+      personas: t.data.personas,
+    }));
+    return json({ transcripts: rows });
+  }
+
+  // GET /api/transcripts/:id
+  const transMatch = url.pathname.match(/^\/api\/transcripts\/([^/]+)$/);
+  if (transMatch && req.method === "GET") {
+    const id = decodeURIComponent(transMatch[1]);
+    const { getTranscript } = await import("../core/skill-md.ts");
+    try {
+      const t = getTranscript(id);
+      return json({ ...t.data, body: t.body });
+    } catch {
+      return json({ error: "not found" }, 404);
+    }
+  }
+
+  // GET /api/identity — 用户身份摘要 (用于 web 顶部 "你是谁")
+  if (url.pathname === "/api/identity" && req.method === "GET") {
+    const { readIdentity } = await import("../core/skill-md.ts");
+    const raw = readIdentity().trim();
+    const placeholderCount = (raw.match(/<[^<>]{3,80}>/g) ?? []).length;
+    const isTemplate = !raw || placeholderCount >= 3;
+    return json({ raw, isTemplate });
+  }
+
   // GET /api/health
   if (url.pathname === "/api/health") {
     return json({ ok: true, initialized: isInitialized(), root: paths.root() });

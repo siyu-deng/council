@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { RoundTable } from "@/components/RoundTable";
+import { ConsoleShell } from "@/components/ConsoleShell";
 import { CaptureView } from "@/components/CaptureView";
 import { useCouncil } from "@/lib/store";
 import { playMock } from "@/lib/fixtures";
@@ -103,13 +103,17 @@ export default function App() {
   }, [view]);
 
   // When a real convene run starts, attach a socket (only for council view).
+  // 注意: deps 不能包含 connection — socket 自己会改 connection state, 会造成无限关闭重建.
   useEffect(() => {
     if (view !== "council") return;
-    if (!runId || connection === "mock") return;
+    if (!runId) return;
+    // 读 mock 标志一次, 不订阅
+    if (useCouncil.getState().connection === "mock") return;
     const sock = new CouncilSocket({ runId });
     sock.open();
     return () => sock.close();
-  }, [runId, connection, view]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runId, view]);
 
   function navigate(next: View) {
     const url = new URL(window.location.href);
@@ -127,7 +131,7 @@ export default function App() {
       <PillNav view={view} onNavigate={navigate} />
       <ConnectionBadge state={connection} />
       {view === "council" ? (
-        <RoundTable
+        <ConsoleShell
           prefillQuestion={prefillQ}
           onConvene={handleConvene}
           isBusy={running}
