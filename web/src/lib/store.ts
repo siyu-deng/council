@@ -188,31 +188,60 @@ export const useCouncil = create<CouncilState & Actions>((set) => ({
           }
 
           if (e.phase === "cross") {
-            // Payload shape: { from, to, point } or similar.
+            // Engine payload: { ref, text } — 整段 cross-exam 文本.
+            // 我们 (a) 把文本固化到 finalized.cross 让 trace 视图显示完整发言;
+            // (b) 从文本里抽出被挑战的 persona refs 作为 arrows.
             const p = e.payload as {
+              ref?: string;
+              text?: string;
               from?: string;
               to?: string;
-              challenger?: string;
-              target?: string;
               point?: string;
-              text?: string;
             } | null;
-            const from = p?.from ?? p?.challenger ?? e.key;
-            const to = p?.to ?? p?.target ?? "";
-            const point = p?.point ?? p?.text ?? "";
-            if (from && to) {
-              return {
-                ...state,
-                arrows: [...state.arrows, { from, to, point }],
-                seats: state.seats[from]
-                  ? {
-                      ...state.seats,
-                      [from]: { ...state.seats[from], speaking: false },
-                    }
-                  : state.seats,
-              };
+            const from = p?.from ?? p?.ref ?? e.key;
+            const text = p?.text ?? "";
+            const seat = state.seats[from];
+            const finalText = text || seat?.buffers.cross || "";
+
+            // 从 cross-exam 正文里识别被挑战的 persona refs (mentors:xxx / self:xxx / roles:xxx)
+            const refRegex = /\b(self|mentors?|roles?):([A-Za-z][A-Za-z0-9-]*)/g;
+            const mentioned = new Set<string>();
+            let m: RegExpExecArray | null;
+            while ((m = refRegex.exec(finalText))) {
+              const bucket = m[1].endsWith("s") || m[1] === "self" ? m[1] : m[1] + "s";
+              const candidate = `${bucket}:${m[2]}`;
+              if (candidate !== from && state.seats[candidate]) {
+                mentioned.add(candidate);
+              }
             }
-            return state;
+            // 兼容 旧 from/to/point 格式
+            if (p?.to && p.to !== from && state.seats[p.to]) mentioned.add(p.to);
+
+            const newArrows: CrossArrow[] = [...state.arrows];
+            for (const target of mentioned) {
+              newArrows.push({
+                from,
+                to: target,
+                point: p?.point ?? finalText.slice(0, 100),
+              });
+            }
+
+            const newSeats = seat
+              ? {
+                  ...state.seats,
+                  [from]: {
+                    ...seat,
+                    speaking: false,
+                    finalized: { ...seat.finalized, cross: finalText },
+                  },
+                }
+              : state.seats;
+
+            return {
+              ...state,
+              arrows: newArrows,
+              seats: newSeats,
+            };
           }
 
           return state;
