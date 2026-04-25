@@ -370,19 +370,9 @@ const PhaseSection = forwardRef<
         </span>
       </button>
 
-      <AnimatePresence initial={false}>
-        {!collapsed && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.22, ease: "easeOut" }}
-            className="overflow-hidden"
-          >
-            <div className="pt-3">{children}</div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {!collapsed && (
+        <div className="pt-3">{children}</div>
+      )}
     </div>
   );
 });
