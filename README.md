@@ -1,5 +1,11 @@
 # Council
 
+[![npm version](https://img.shields.io/npm/v/@moyu-build/council.svg?color=E8B563)](https://www.npmjs.com/package/@moyu-build/council)
+[![npm downloads](https://img.shields.io/npm/dt/@moyu-build/council.svg?color=8C8780)](https://www.npmjs.com/package/@moyu-build/council)
+[![License: MIT](https://img.shields.io/badge/License-MIT-amber.svg?color=E8B563)](LICENSE)
+[![MCP](https://img.shields.io/badge/MCP-server-amber.svg?color=B86D3A)](https://modelcontextprotocol.io)
+[![Node](https://img.shields.io/badge/node-≥20-green)](https://nodejs.org)
+
 > Your thinking, round-tabled.
 >
 > ChatGPT 让 AI 认识全人类。**Council 让 AI 认识你。**
@@ -15,7 +21,7 @@
 
 ```bash
 # 1. 安装 (需要 Node 20+)
-npm install -g @siyu-deng/council
+npm install -g @moyu-build/council
 
 # 2. 准备 API key
 echo "ANTHROPIC_API_KEY=sk-ant-..." > ~/.council.env
@@ -141,11 +147,11 @@ Markdown + YAML + JSONL, 没有数据库。用户拥有完全控制权。
 ```bash
 # 一次性试水, 不全局装
 export ANTHROPIC_API_KEY=sk-ant-...
-npx @siyu-deng/council@latest init
-npx @siyu-deng/council@latest convene "我该不该 X"
+npx @moyu-build/council@latest init
+npx @moyu-build/council@latest convene "我该不该 X"
 
 # 或全局装 (装一次, 之后命令直接是 council)
-npm i -g @siyu-deng/council
+npm i -g @moyu-build/council
 council init
 council convene "我该不该 X"
 ```
@@ -213,7 +219,7 @@ bun preflight              # 全绿 = 可以上场
 **Claude Code (一行命令)**:
 
 ```bash
-claude mcp add council -e ANTHROPIC_API_KEY=sk-ant-... -- npx -y @siyu-deng/council@latest serve
+claude mcp add council -e ANTHROPIC_API_KEY=sk-ant-... -- npx -y @moyu-build/council@latest serve
 ```
 
 **Claude Desktop / Cursor / Cherry Studio (改 JSON 配置)**:
@@ -223,7 +229,7 @@ claude mcp add council -e ANTHROPIC_API_KEY=sk-ant-... -- npx -y @siyu-deng/coun
   "mcpServers": {
     "council": {
       "command": "npx",
-      "args": ["-y", "@siyu-deng/council@latest", "serve"],
+      "args": ["-y", "@moyu-build/council@latest", "serve"],
       "env": { "ANTHROPIC_API_KEY": "sk-ant-..." }
     }
   }

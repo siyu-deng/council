@@ -1,5 +1,5 @@
 {
-  "name": "@siyu-deng/council",
+  "name": "@moyu-build/council",
   "version": "0.1.0",
   "description": "Council — 你的思考议会。捕获对话, 蒸馏思维 skill, 召集多 persona 辩论。CLI + MCP server, 跨 Claude Desktop / Cursor / Claude Code 通用。",
   "keywords": [
@@ -19,13 +19,13 @@
     "name": "墨宇 (Siyu Deng)",
     "email": "bozzkopp791@gmail.com"
   },
-  "homepage": "https://github.com/siyu-deng/council#readme",
+  "homepage": "https://github.com/moyu-build/council#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/siyu-deng/council.git"
+    "url": "git+https://github.com/moyu-build/council.git"
   },
   "bugs": {
-    "url": "https://github.com/siyu-deng/council/issues"
+    "url": "https://github.com/moyu-build/council/issues"
   },
   "bin": {
     "council": "./dist/council.mjs"
