@@ -64,13 +64,17 @@ export async function convene(
   // ——— 1. Summon ———
   E.phaseStarted("summon");
   let selected: Persona[];
+  let summonRationale: string | null = null;
+  const diversityLog: string[] = [];
   if (opts.with) {
     const refs = opts.with.split(",").map((s) => s.trim()).filter(Boolean);
     selected = refs.map((r) => getPersona(r));
+    summonRationale = `user-specified via --with: ${refs.join(", ")}`;
     E.summonDone(selected.map(personaMeta), "user-specified via --with");
   } else {
     log.section("召集议会...");
     const res = await summonPersonas(question, allPersonas);
+    summonRationale = res.rationale;
     log.muted(`  rationale: ${res.rationale}`);
     E.log("muted", `rationale: ${res.rationale}`);
     selected = res.selected
@@ -110,6 +114,7 @@ export async function convene(
           selected.push(candidate);
           selectedSet.add(candidate.ref);
           const line = `+ 自动补位 ${candidate.ref} (多样性: 缺 ${t})`;
+          diversityLog.push(line);
           log.muted(`  ${line}`);
           E.log("muted", line);
         }
@@ -133,6 +138,7 @@ export async function convene(
           .pop()!;
         const dropped = selected.splice(lastIdx, 1)[0];
         const line = `- 裁掉 ${dropped.ref} (超出 max_personas=${cfg.convene.max_personas})`;
+        diversityLog.push(line);
         log.muted(`  ${line}`);
         E.log("muted", line);
       }
@@ -277,6 +283,8 @@ export async function convene(
     statementResults,
     crossResults,
     synthesisBuf,
+    summonRationale,
+    diversityLog,
   );
 
   const fm: TranscriptFrontmatter = {
@@ -347,9 +355,29 @@ function renderTranscriptBody(
   statements: { ref: string; statement: string }[],
   crossExams: { ref: string; critique: string }[],
   synthesis: string,
+  summonRationale: string | null,
+  diversityLog: string[],
 ): string {
   const lines: string[] = [];
   lines.push(`# ${question}\n`);
+
+  lines.push("## 召集理由\n");
+  if (summonRationale) {
+    lines.push(`${summonRationale}\n`);
+  } else {
+    lines.push(`(无 — 召集人未提供 rationale)\n`);
+  }
+  lines.push("**最终参会:**\n");
+  for (const p of personas) {
+    lines.push(`- \`${p.ref}\` [${p.frontmatter.type}] — ${p.frontmatter.description}`);
+  }
+  lines.push("");
+  if (diversityLog.length > 0) {
+    lines.push("**多样性约束调整:**\n");
+    for (const l of diversityLog) lines.push(`- ${l}`);
+    lines.push("");
+  }
+
   lines.push("## Statements\n");
   for (const s of statements) {
     lines.push(`### ${s.ref}\n\n${s.statement}\n`);
