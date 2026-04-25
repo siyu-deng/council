@@ -19,13 +19,13 @@ import {
 import { forgePersona } from "../prompts/P2-forge-persona.ts";
 import { makeEmitter, newRunId } from "./events.ts";
 
-interface StoredHighlight {
+export interface StoredHighlight {
   id: string;
   session_id: string;
   data: Highlight;
 }
 
-interface DistilledState {
+export interface DistilledState {
   highlights: Record<string, StoredHighlight>;
   sessions: Record<
     string,
@@ -33,11 +33,11 @@ interface DistilledState {
   >;
   personas: Record<
     string,
-    { source_highlights: string[]; forged_at: string }
+    { source_highlights: string[]; forged_at: string; refined_at?: string }
   >;
 }
 
-function readState(): DistilledState {
+export function readState(): DistilledState {
   ensureDir(paths.state());
   if (!existsSync(paths.distilledIndex()))
     return { highlights: {}, sessions: {}, personas: {} };
@@ -53,7 +53,7 @@ function readState(): DistilledState {
   }
 }
 
-function writeState(state: DistilledState): void {
+export function writeState(state: DistilledState): void {
   ensureDir(paths.state());
   writeFileSync(paths.distilledIndex(), JSON.stringify(state, null, 2), "utf-8");
 }
@@ -144,11 +144,26 @@ export async function forgePersonasFromAll(): Promise<string[]> {
   for (const [type, cluster] of byType) {
     if (cluster.length === 0) continue;
     const sourceIds = cluster.map((h) => h.id).sort();
-    const existing = Object.entries(state.personas).find(([, v]) =>
-      arraysEqual([...v.source_highlights].sort(), sourceIds),
-    );
-    if (existing) {
-      log.muted(`  ↷ ${type}: 已有 persona (${existing[0]})`);
+
+    // —— 检测此 type 是否已有 self persona —— 推断方式: 看 persona 的 source_highlights[0] 的 type ——
+    const existingForType = Object.entries(state.personas).find(([, v]) => {
+      if (!v.source_highlights || v.source_highlights.length === 0) return false;
+      const firstHl = state.highlights[v.source_highlights[0]];
+      return firstHl?.data.type === type;
+    });
+
+    if (existingForType) {
+      const [name, record] = existingForType;
+      const existingIds = new Set(record.source_highlights);
+      const newIds = sourceIds.filter((id) => !existingIds.has(id));
+      if (newIds.length === 0) {
+        log.muted(`  ↷ ${type}: 已有 persona (self:${name}), 无新 highlights`);
+      } else {
+        log.warn(
+          `  ⚠️  ${type}: 已有 persona ${c.bold(`self:${name}`)}, 检测到 ${newIds.length} 个新 highlights`,
+        );
+        log.muted(`     跑 ${c.bold(`council refine self:${name}`)} 深化它, 而非 forge 重复`);
+      }
       continue;
     }
 
@@ -241,8 +256,3 @@ export async function distillOne(
   }
 }
 
-function arraysEqual<T>(a: T[], b: T[]): boolean {
-  if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
-  return true;
-}

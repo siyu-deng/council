@@ -14,6 +14,7 @@ import { conveneCommand } from "../src/commands/convene.ts";
 import { feedbackCommand } from "../src/commands/feedback.ts";
 import { evolveCommand } from "../src/commands/evolve.ts";
 import { mergeCommand } from "../src/commands/merge.ts";
+import { refineCommand } from "../src/commands/refine.ts";
 import { exportCommand } from "../src/commands/export.ts";
 import { serveCommand } from "../src/commands/serve.ts";
 
@@ -120,6 +121,14 @@ program
   .description("融合两个 persona 为一个")
   .action(async (a, b) => {
     await mergeCommand(a, b);
+  });
+
+program
+  .command("refine [personaRef]")
+  .description("用新 highlights 深化已有 self persona (不传 ref 则扫所有 self)")
+  .option("-y, --yes", "自动采纳 reinforce/enrich (contradict 仍写 draft 不污染主文件)")
+  .action(async (personaRef, opts) => {
+    await refineCommand(personaRef, opts);
   });
 
 // ━━━ export / serve ━━━
