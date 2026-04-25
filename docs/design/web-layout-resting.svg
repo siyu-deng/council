@@ -1,0 +1,176 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 800" width="1280" height="800" font-family="-apple-system, 'PingFang SC', 'Source Han Sans SC', sans-serif">
+  <defs>
+    <linearGradient id="cardBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1A1815"/>
+      <stop offset="100%" stop-color="#15130F"/>
+    </linearGradient>
+    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
+      <feOffset dx="0" dy="2"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.4"/></feComponentTransfer>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="amberGlow">
+      <feGaussianBlur stdDeviation="4"/>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- ───── 全屏背景 (黑曜石黑) ───── -->
+  <rect width="1280" height="800" fill="#0E0D0C"/>
+
+  <!-- ───── 顶部 header ───── -->
+  <rect x="0" y="0" width="1280" height="56" fill="#0E0D0C"/>
+  <line x1="0" y1="56" x2="1280" y2="56" stroke="#2A2620" stroke-width="1"/>
+  <text x="32" y="36" font-family="'Source Han Serif SC', 'Songti SC', Georgia, serif" font-size="20" font-style="italic" fill="#E8B563">Council</text>
+  <text x="120" y="38" font-size="11" fill="#5A5650" letter-spacing="1.5">你的认知组织</text>
+  <!-- 设置 icon -->
+  <circle cx="1238" cy="28" r="3" fill="#8C8780"/>
+  <circle cx="1248" cy="28" r="3" fill="#8C8780"/>
+  <circle cx="1258" cy="28" r="3" fill="#8C8780"/>
+
+  <!-- ───── 左侧图标栏 (72px 宽) ───── -->
+  <rect x="0" y="56" width="72" height="744" fill="#0E0D0C"/>
+  <line x1="72" y1="56" x2="72" y2="800" stroke="#2A2620" stroke-width="1"/>
+
+  <!-- icon: sessions (active 高亮) -->
+  <g transform="translate(36, 110)">
+    <rect x="-22" y="-22" width="44" height="44" rx="10" fill="#1A1815" stroke="#E8B563" stroke-width="1.5"/>
+    <text y="6" text-anchor="middle" font-size="18" fill="#E8B563">⊟</text>
+  </g>
+  <text x="36" y="158" text-anchor="middle" font-size="10" fill="#E8B563" letter-spacing="0.5">sessions</text>
+
+  <!-- icon: skills -->
+  <g transform="translate(36, 200)">
+    <rect x="-22" y="-22" width="44" height="44" rx="10" fill="none" stroke="#3A352D" stroke-width="1"/>
+    <text y="6" text-anchor="middle" font-size="18" fill="#5A5650">✦</text>
+  </g>
+  <text x="36" y="248" text-anchor="middle" font-size="10" fill="#5A5650">skills</text>
+
+  <!-- icon: personas -->
+  <g transform="translate(36, 290)">
+    <rect x="-22" y="-22" width="44" height="44" rx="10" fill="none" stroke="#3A352D" stroke-width="1"/>
+    <circle cx="-6" cy="-2" r="5" fill="none" stroke="#5A5650" stroke-width="1.2"/>
+    <circle cx="6" cy="-2" r="5" fill="none" stroke="#5A5650" stroke-width="1.2"/>
+    <circle cx="0" cy="8" r="5" fill="none" stroke="#5A5650" stroke-width="1.2"/>
+  </g>
+  <text x="36" y="338" text-anchor="middle" font-size="10" fill="#5A5650">personas</text>
+
+  <!-- icon: transcripts (议会记录) -->
+  <g transform="translate(36, 380)">
+    <rect x="-22" y="-22" width="44" height="44" rx="10" fill="none" stroke="#3A352D" stroke-width="1"/>
+    <line x1="-10" y1="-8" x2="10" y2="-8" stroke="#5A5650" stroke-width="1.5"/>
+    <line x1="-10" y1="-2" x2="10" y2="-2" stroke="#5A5650" stroke-width="1.5"/>
+    <line x1="-10" y1="4" x2="6" y2="4" stroke="#5A5650" stroke-width="1.5"/>
+    <line x1="-10" y1="10" x2="10" y2="10" stroke="#5A5650" stroke-width="1.5"/>
+  </g>
+  <text x="36" y="428" text-anchor="middle" font-size="10" fill="#5A5650">transcripts</text>
+
+  <!-- icon: decisions (议决) -->
+  <g transform="translate(36, 470)">
+    <rect x="-22" y="-22" width="44" height="44" rx="10" fill="none" stroke="#3A352D" stroke-width="1"/>
+    <path d="M -10 0 L -3 7 L 10 -8" stroke="#5A5650" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="36" y="518" text-anchor="middle" font-size="10" fill="#5A5650">decisions</text>
+
+  <!-- 蜡烛 idle marker 底部 -->
+  <g transform="translate(36, 740)">
+    <circle r="3" fill="#E8B563" opacity="0.4">
+      <animate attributeName="opacity" values="0.3;0.6;0.3" dur="2.5s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <!-- ───── 中央舞台 ───── -->
+  <!-- 标题区 -->
+  <text x="100" y="100" font-family="'Source Han Serif SC', 'Songti SC', Georgia, serif" font-size="22" fill="#E8B563" font-style="italic">最近的思考资产</text>
+  <text x="100" y="124" font-size="12" fill="#5A5650">点击侧栏切换视角 · 在底部输入框开始一次议会</text>
+
+  <!-- ───── feed: card 1 (capture) ───── -->
+  <g transform="translate(100, 160)">
+    <rect width="1140" height="84" rx="12" fill="url(#cardBg)" stroke="#2A2620" stroke-width="1" filter="url(#softShadow)"/>
+    <!-- type chip -->
+    <rect x="20" y="18" width="72" height="22" rx="11" fill="none" stroke="#5A4830" stroke-width="1"/>
+    <text x="56" y="33" text-anchor="middle" font-size="10" fill="#B8895A" letter-spacing="0.5">CAPTURE</text>
+    <!-- title -->
+    <text x="110" y="35" font-size="15" fill="#D8CFC4" font-weight="500">PKM 不是 Council</text>
+    <!-- meta -->
+    <text x="110" y="56" font-size="11" fill="#8C8780">5 个高光蒸馏 · self:reframe-before-execute (+2) · self:tools-sharpen-or-dull (+1)</text>
+    <!-- timestamp -->
+    <text x="1108" y="35" text-anchor="end" font-size="11" fill="#5A5650">2 小时前</text>
+    <!-- preview -->
+    <text x="20" y="72" font-size="11" fill="#6B655A" font-style="italic">"PKM 让你存得越多越好, Council 让你忘得越合理越好"</text>
+  </g>
+
+  <!-- ───── feed: card 2 (refine) ───── -->
+  <g transform="translate(100, 264)">
+    <rect width="1140" height="84" rx="12" fill="url(#cardBg)" stroke="#2A2620" stroke-width="1" filter="url(#softShadow)"/>
+    <rect x="20" y="18" width="72" height="22" rx="11" fill="none" stroke="#3D5A30" stroke-width="1"/>
+    <text x="56" y="33" text-anchor="middle" font-size="10" fill="#7AA85F" letter-spacing="0.5">REFINE</text>
+    <text x="110" y="35" font-size="15" fill="#D8CFC4" font-weight="500">self:reframe-before-execute  →  v3</text>
+    <text x="110" y="56" font-size="11" fill="#8C8780">enrich · conf 0.92 → 0.95 · 加入"维度转换"思考工具</text>
+    <text x="1108" y="35" text-anchor="end" font-size="11" fill="#5A5650">2 小时前</text>
+    <text x="20" y="72" font-size="11" fill="#6B655A" font-style="italic">rationale: 用户特别擅长通过维度转换识别范式创新, 这是已有 persona 没覆盖的维度</text>
+  </g>
+
+  <!-- ───── feed: card 3 (convene) ───── -->
+  <g transform="translate(100, 368)">
+    <rect width="1140" height="84" rx="12" fill="url(#cardBg)" stroke="#2A2620" stroke-width="1" filter="url(#softShadow)"/>
+    <rect x="20" y="18" width="72" height="22" rx="11" fill="none" stroke="#5A3A30" stroke-width="1"/>
+    <text x="56" y="33" text-anchor="middle" font-size="10" fill="#C8845A" letter-spacing="0.5">CONVENE</text>
+    <text x="110" y="35" font-size="15" fill="#D8CFC4" font-weight="500">黑客松 5 分钟 demo, 砍 MCP 还是保留?</text>
+    <text x="110" y="56" font-size="11" fill="#8C8780">3 personas · self:reframe + mentors:jobs + roles:devils-advocate</text>
+    <text x="1108" y="35" text-anchor="end" font-size="11" fill="#5A5650">3 小时前</text>
+    <text x="20" y="72" font-size="11" fill="#6B655A" font-style="italic">synthesis: 有条件保留 MCP, 但前提是先验证评委的技术背景占比</text>
+  </g>
+
+  <!-- ───── feed: card 4 (capture) ───── -->
+  <g transform="translate(100, 472)">
+    <rect width="1140" height="64" rx="12" fill="url(#cardBg)" stroke="#2A2620" stroke-width="1" filter="url(#softShadow)" opacity="0.7"/>
+    <rect x="20" y="18" width="72" height="22" rx="11" fill="none" stroke="#5A4830" stroke-width="1" opacity="0.7"/>
+    <text x="56" y="33" text-anchor="middle" font-size="10" fill="#B8895A" letter-spacing="0.5" opacity="0.7">CAPTURE</text>
+    <text x="110" y="35" font-size="15" fill="#A09A8E">血糖稳定饮食系统</text>
+    <text x="110" y="55" font-size="11" fill="#6B655A">5 个高光 · 2 天前</text>
+  </g>
+
+  <!-- ───── feed: card 5 (capture, 更淡) ───── -->
+  <g transform="translate(100, 556)">
+    <rect width="1140" height="64" rx="12" fill="url(#cardBg)" stroke="#2A2620" stroke-width="1" filter="url(#softShadow)" opacity="0.5"/>
+    <rect x="20" y="18" width="72" height="22" rx="11" fill="none" stroke="#5A4830" stroke-width="1" opacity="0.5"/>
+    <text x="56" y="33" text-anchor="middle" font-size="10" fill="#B8895A" letter-spacing="0.5" opacity="0.5">CAPTURE</text>
+    <text x="110" y="35" font-size="15" fill="#7E786C">自然语言交互未来</text>
+    <text x="110" y="55" font-size="11" fill="#5A5450">5 个高光 · 2 天前</text>
+  </g>
+
+  <!-- ───── 底部输入框 ───── -->
+  <line x1="100" y1="666" x2="1240" y2="666" stroke="#2A2620" stroke-width="1"/>
+
+  <!-- 输入框主体 -->
+  <g transform="translate(100, 696)">
+    <rect width="1140" height="76" rx="14" fill="#161410" stroke="#3A352D" stroke-width="1"/>
+    <text x="24" y="32" font-size="14" fill="#5A5650" font-style="italic">你面前有什么决定?  <tspan fill="#3A352D">/</tspan>capture  <tspan fill="#3A352D">/</tspan>convene  <tspan fill="#3A352D">/</tspan>refine</text>
+
+    <!-- 工具行 -->
+    <g transform="translate(24, 50)">
+      <circle r="3" cx="0" cy="0" fill="#5A5650"/>
+      <text x="14" y="4" font-size="10" fill="#8C8780">/</text>
+      <text x="22" y="4" font-size="10" fill="#5A5650">指令</text>
+      <text x="62" y="4" font-size="10" fill="#3A352D">·</text>
+      <text x="76" y="4" font-size="10" fill="#5A5650">⌘K 命令面板</text>
+      <text x="156" y="4" font-size="10" fill="#3A352D">·</text>
+      <text x="170" y="4" font-size="10" fill="#5A5650">⌘↩ 召集</text>
+    </g>
+
+    <!-- send button -->
+    <g transform="translate(1080, 38)">
+      <circle r="22" fill="#E8B563" filter="url(#amberGlow)"/>
+      <path d="M -6 4 L 0 -6 L 6 4 M 0 -6 L 0 6" stroke="#0E0D0C" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+
+  <!-- ───── 底部状态条 ───── -->
+  <text x="100" y="788" font-size="10" fill="#3A352D">9 personas · 30 highlights · 6 sessions · 6 议会</text>
+  <text x="1240" y="788" text-anchor="end" font-size="10" fill="#3A352D">~/.council/ · ready</text>
+
+  <!-- ───── 标注: 这是默认态 ───── -->
+  <text x="100" y="60" text-anchor="start" font-size="9" fill="#3A352D" letter-spacing="2">DEFAULT · ASSET FEED</text>
+</svg>

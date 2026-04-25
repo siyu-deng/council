@@ -1,0 +1,179 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 800" width="1280" height="800" font-family="-apple-system, 'PingFang SC', 'Source Han Sans SC', sans-serif">
+  <defs>
+    <radialGradient id="candleLight" cx="50%" cy="35%">
+      <stop offset="0%" stop-color="#E8B563" stop-opacity="0.18"/>
+      <stop offset="40%" stop-color="#E8B563" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#E8B563" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="seatActive" cx="50%" cy="50%">
+      <stop offset="0%" stop-color="#3A2A18"/>
+      <stop offset="100%" stop-color="#1A1410"/>
+    </radialGradient>
+    <filter id="amberGlow">
+      <feGaussianBlur stdDeviation="3"/>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="strongAmberGlow">
+      <feGaussianBlur stdDeviation="6"/>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- 全屏黑曜石黑 -->
+  <rect width="1280" height="800" fill="#0E0D0C"/>
+
+  <!-- 中央光晕 (蜡烛照明) -->
+  <ellipse cx="690" cy="380" rx="500" ry="350" fill="url(#candleLight)"/>
+
+  <!-- 顶部 header -->
+  <rect x="0" y="0" width="1280" height="56" fill="#0E0D0C"/>
+  <line x1="0" y1="56" x2="1280" y2="56" stroke="#2A2620" stroke-width="1"/>
+  <text x="32" y="36" font-family="'Source Han Serif SC', 'Songti SC', Georgia, serif" font-size="20" font-style="italic" fill="#E8B563">Council</text>
+  <text x="120" y="38" font-size="11" fill="#5A5650" letter-spacing="1.5">议会进行中</text>
+  <!-- 状态指示器 -->
+  <g transform="translate(220, 30)">
+    <circle r="4" fill="#E8B563">
+      <animate attributeName="opacity" values="0.4;1;0.4" dur="1.6s" repeatCount="indefinite"/>
+    </circle>
+    <text x="14" y="4" font-size="11" fill="#B8895A" letter-spacing="0.5">CROSS-EXAM · 第 2 阶段</text>
+  </g>
+  <circle cx="1238" cy="28" r="3" fill="#5A5650"/>
+  <circle cx="1248" cy="28" r="3" fill="#5A5650"/>
+  <circle cx="1258" cy="28" r="3" fill="#5A5650"/>
+
+  <!-- 左侧图标栏 (议会态下偏暗) -->
+  <rect x="0" y="56" width="72" height="744" fill="#0E0D0C"/>
+  <line x1="72" y1="56" x2="72" y2="800" stroke="#2A2620" stroke-width="1"/>
+  <g opacity="0.35">
+    <g transform="translate(36, 110)">
+      <rect x="-22" y="-22" width="44" height="44" rx="10" fill="none" stroke="#3A352D" stroke-width="1"/>
+      <text y="6" text-anchor="middle" font-size="18" fill="#5A5650">⊟</text>
+    </g>
+    <g transform="translate(36, 200)">
+      <rect x="-22" y="-22" width="44" height="44" rx="10" fill="none" stroke="#3A352D" stroke-width="1"/>
+      <text y="6" text-anchor="middle" font-size="18" fill="#5A5650">✦</text>
+    </g>
+    <g transform="translate(36, 290)">
+      <rect x="-22" y="-22" width="44" height="44" rx="10" fill="none" stroke="#3A352D" stroke-width="1"/>
+      <circle cx="-6" cy="-2" r="5" fill="none" stroke="#5A5650" stroke-width="1.2"/>
+      <circle cx="6" cy="-2" r="5" fill="none" stroke="#5A5650" stroke-width="1.2"/>
+      <circle cx="0" cy="8" r="5" fill="none" stroke="#5A5650" stroke-width="1.2"/>
+    </g>
+    <g transform="translate(36, 380)">
+      <rect x="-22" y="-22" width="44" height="44" rx="10" fill="none" stroke="#3A352D" stroke-width="1"/>
+      <line x1="-10" y1="-8" x2="10" y2="-8" stroke="#5A5650" stroke-width="1.5"/>
+      <line x1="-10" y1="-2" x2="10" y2="-2" stroke="#5A5650" stroke-width="1.5"/>
+      <line x1="-10" y1="4" x2="6" y2="4" stroke="#5A5650" stroke-width="1.5"/>
+      <line x1="-10" y1="10" x2="10" y2="10" stroke="#5A5650" stroke-width="1.5"/>
+    </g>
+    <g transform="translate(36, 470)">
+      <rect x="-22" y="-22" width="44" height="44" rx="10" fill="none" stroke="#3A352D" stroke-width="1"/>
+      <path d="M -10 0 L -3 7 L 10 -8" stroke="#5A5650" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+
+  <!-- ───── 中央舞台 · 议会态 ───── -->
+
+  <!-- 议题 (顶部, 大号 italic serif) -->
+  <text x="690" y="120" text-anchor="middle" font-family="'Source Han Serif SC', 'Songti SC', Georgia, serif" font-size="28" font-style="italic" fill="#E8B563" letter-spacing="0.5">
+    黑客松 5 分钟 demo, 我应该砍掉 MCP 吗?
+  </text>
+  <text x="690" y="146" text-anchor="middle" font-size="11" fill="#5A5650" letter-spacing="1">召集理由 · Jobs 看减法 / Naval 看杠杆 / 魔鬼代言人压力测试</text>
+
+  <!-- 圆桌虚线圈 (隐喻) -->
+  <ellipse cx="690" cy="350" rx="380" ry="120" fill="none" stroke="#2A2620" stroke-width="1" stroke-dasharray="3 6"/>
+
+  <!-- 蜡烛 (中央光源) -->
+  <g transform="translate(690, 350)">
+    <rect x="-4" y="0" width="8" height="22" fill="#D8CFC4"/>
+    <ellipse cx="0" cy="-2" rx="4" ry="8" fill="#E8B563" filter="url(#strongAmberGlow)">
+      <animate attributeName="ry" values="8;9.5;8" dur="2.2s" repeatCount="indefinite"/>
+    </ellipse>
+  </g>
+
+  <!-- ━━ 左 persona: self:reframe-before-execute (沉默) ━━ -->
+  <g transform="translate(380, 290)">
+    <!-- 椅子 (头像) -->
+    <circle r="38" fill="#1A1815" stroke="#3A352D" stroke-width="1.5"/>
+    <text y="6" text-anchor="middle" font-size="22" fill="#5A5650">◇</text>
+    <!-- 名字 -->
+    <text y="60" text-anchor="middle" font-size="11" fill="#8C8780" letter-spacing="0.5">self:reframe-before-execute</text>
+    <text y="76" text-anchor="middle" font-size="9" fill="#5A5650">conf 0.95 · used 4</text>
+  </g>
+
+  <!-- ━━ 中 persona: mentors:jobs (正在发言) ━━ -->
+  <g transform="translate(690, 250)">
+    <!-- 光晕 -->
+    <circle r="58" fill="url(#seatActive)" filter="url(#strongAmberGlow)"/>
+    <!-- 椅子 -->
+    <circle r="44" fill="#221A12" stroke="#E8B563" stroke-width="2"/>
+    <text y="8" text-anchor="middle" font-size="26" fill="#E8B563" font-family="Georgia, serif" font-style="italic">J</text>
+    <!-- 名字 -->
+    <text y="68" text-anchor="middle" font-size="12" fill="#E8B563" letter-spacing="0.5">mentors:jobs</text>
+    <text y="84" text-anchor="middle" font-size="9" fill="#B8895A">正在发言 · cross-exam</text>
+  </g>
+
+  <!-- ━━ 右 persona: roles:devils-advocate (沉默) ━━ -->
+  <g transform="translate(1000, 290)">
+    <circle r="38" fill="#1A1815" stroke="#3A352D" stroke-width="1.5"/>
+    <text y="8" text-anchor="middle" font-size="22" fill="#5A5650">◈</text>
+    <text y="60" text-anchor="middle" font-size="11" fill="#8C8780" letter-spacing="0.5">roles:devils-advocate</text>
+    <text y="76" text-anchor="middle" font-size="9" fill="#5A5650">已发言 · score 0.78</text>
+  </g>
+
+  <!-- ━━ Jobs ↔ Devils Advocate 之间的金线 (cross-exam 中) ━━ -->
+  <line x1="734" y1="290" x2="962" y2="290" stroke="#E8B563" stroke-width="1" stroke-dasharray="4 4" opacity="0.45">
+    <animate attributeName="stroke-dashoffset" values="0;-16" dur="1.8s" repeatCount="indefinite"/>
+  </line>
+  <text x="848" y="284" text-anchor="middle" font-size="9" fill="#B8895A" letter-spacing="1">正在质疑</text>
+
+  <!-- ━━ 字幕区 (主舞台下半, Jobs 当前发言) ━━ -->
+  <line x1="160" y1="460" x2="1220" y2="460" stroke="#2A2620" stroke-width="1"/>
+
+  <text x="690" y="498" text-anchor="middle" font-size="11" fill="#B8895A" letter-spacing="1.5">▼  M E N T O R S : J O B S</text>
+
+  <text x="690" y="540" text-anchor="middle" font-family="'Source Han Serif SC', 'Songti SC', Georgia, serif" font-size="18" fill="#D8CFC4" letter-spacing="0.5">
+    "你们都在假设 MCP 的价值是「向评委证明你理解架构」。
+  </text>
+  <text x="690" y="568" text-anchor="middle" font-family="'Source Han Serif SC', 'Songti SC', Georgia, serif" font-size="18" fill="#D8CFC4" letter-spacing="0.5">
+    这是典型的创始人自我欺骗。"
+  </text>
+
+  <text x="690" y="608" text-anchor="middle" font-size="13" fill="#8C8780" font-style="italic">
+    demo 的目的不是展示你有多深, 而是让评委记住一个清晰的「为什么这个问题值得解决」.
+  </text>
+
+  <!-- 已说人发言历史 (顶部小字) -->
+  <g transform="translate(160, 478)">
+    <circle r="3" fill="#5A5650"/>
+    <text x="12" y="4" font-size="10" fill="#5A5650">self:reframe (statement) · 2 分钟前</text>
+  </g>
+  <g transform="translate(160, 498)">
+    <circle r="3" fill="#5A5650"/>
+    <text x="12" y="4" font-size="10" fill="#5A5650">roles:devils-advocate (statement) · 1 分钟前</text>
+  </g>
+
+  <!-- ━━ 底部输入框 (议会进行时禁用态) ━━ -->
+  <g transform="translate(100, 696)">
+    <rect width="1140" height="76" rx="14" fill="#0E0D0C" stroke="#2A2620" stroke-width="1" stroke-dasharray="2 4"/>
+    <text x="24" y="32" font-size="14" fill="#3A352D" font-style="italic">议会进行中, 输入框已锁. 等待 synthesis 完成...</text>
+    <text x="24" y="54" font-size="10" fill="#3A352D">⌘. 中断  ·  按 ESC 切回 default</text>
+
+    <!-- 进度 dots -->
+    <g transform="translate(1108, 38)">
+      <circle r="5" cx="-24" cy="0" fill="#E8B563" opacity="0.9"/>
+      <circle r="5" cx="-8" cy="0" fill="#E8B563" opacity="0.9"/>
+      <circle r="5" cx="8" cy="0" fill="#E8B563" opacity="0.45">
+        <animate attributeName="opacity" values="0.4;0.9;0.4" dur="1.4s" repeatCount="indefinite"/>
+      </circle>
+      <circle r="5" cx="24" cy="0" fill="#3A352D"/>
+    </g>
+  </g>
+
+  <!-- 阶段标识 -->
+  <text x="100" y="60" text-anchor="start" font-size="9" fill="#3A352D" letter-spacing="2">CONVENE · CROSS-EXAMINATION</text>
+
+  <!-- 底部状态 -->
+  <text x="100" y="788" font-size="10" fill="#3A352D">P3 → P4 ✓ → P5 (running) → P6</text>
+  <text x="1240" y="788" text-anchor="end" font-size="10" fill="#3A352D">~/.council/ · stream-active</text>
+</svg>
