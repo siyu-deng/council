@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AssetFeed } from "./AssetFeed";
 import { TraceView } from "./TraceView";
+import { CommandPalette } from "./CommandPalette";
 import { useCouncil } from "@/lib/store";
 import { api } from "@/lib/api";
+import { useTheme } from "@/lib/theme";
 
 type FilterType = "all" | "sessions" | "skills" | "personas" | "transcripts";
 type AppMode = "council" | "capture";
@@ -263,6 +265,12 @@ export function ConsoleShell({
 
   return (
     <div className="flex h-full w-full">
+      {/* ═══════════ Cmd+K 全局检索 ═══════════ */}
+      <CommandPalette
+        onPrefill={(text) => setDraft(text)}
+        onModeChange={onModeChange}
+      />
+
       {/* ═══════════ 全高 Sidebar ═══════════ */}
       <aside
         className="flex shrink-0 flex-col border-r border-amber-dim/15 bg-ink-deep/60 backdrop-blur transition-[width] duration-200 ease-out"
@@ -310,8 +318,47 @@ export function ConsoleShell({
           </button>
         </div>
 
+        {/* —— 全局检索按钮 (⌘K) —— */}
+        <button
+          type="button"
+          onClick={() => {
+            // 派一个虚拟 ⌘K 事件给 CommandPalette 监听器
+            window.dispatchEvent(
+              new KeyboardEvent("keydown", {
+                key: "k",
+                metaKey: true,
+                ctrlKey: false,
+                bubbles: true,
+              }),
+            );
+          }}
+          title={!expanded ? "搜索 (⌘K)" : undefined}
+          className="group mx-3 mt-3 flex h-9 items-center gap-3 rounded-lg border border-amber-dim/20 bg-ink-soft/40 px-3 text-parchment/45 transition-colors hover:border-amber-dim/40 hover:bg-amber-dim/[0.06] hover:text-amber-glow/85"
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" className="shrink-0">
+            <circle cx="11" cy="11" r="6" stroke="currentColor" strokeWidth="1.6" />
+            <path d="M 16 16 L 20 20" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          </svg>
+          <AnimatePresence initial={false}>
+            {expanded && (
+              <motion.span
+                initial={{ opacity: 0, x: -6 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -6 }}
+                transition={{ duration: 0.12 }}
+                className="flex flex-1 items-center justify-between text-[12px]"
+              >
+                <span>搜索</span>
+                <kbd className="rounded border border-amber-dim/30 bg-ink-deep/60 px-1.5 py-0.5 text-[9px] tracking-wider text-parchment/50">
+                  ⌘K
+                </kbd>
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </button>
+
         {/* —— 模式切换 (议会 / 捕获) —— */}
-        <div className="border-b border-amber-dim/10 py-2">
+        <div className="mt-2 border-b border-amber-dim/10 py-2">
           {SIDEBAR_MODES.map((m) => {
             const active = mode === m.key;
             return (
@@ -364,11 +411,12 @@ export function ConsoleShell({
         {/* capture 模式时占位填充 */}
         {mode === "capture" && <div className="flex-1" />}
 
-        {/* —— 底部状态 + 版本 —— */}
+        {/* —— 底部状态 + 主题 + 版本 —— */}
         <div className="shrink-0 border-t border-amber-dim/10 px-3 py-2">
           <ConnectionPill state={connection} expanded={expanded} />
+          <ThemePill expanded={expanded} />
           {expanded && (
-            <div className="mt-1 px-1 text-[9px] tracking-[0.25em] text-parchment/15">
+            <div className="mt-1 px-1 text-[9px] tracking-[0.25em] text-parchment/30">
               v0.3 · NODE-NATIVE
             </div>
           )}
@@ -575,6 +623,83 @@ function ConnectionPill({
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────
+// 主题切换 (system → light → dark 三态循环)
+// ──────────────────────────────────────────────────────────────
+function ThemePill({ expanded }: { expanded: boolean }) {
+  const { pref, resolved, cycle } = useTheme();
+  const labelMap: Record<string, string> = {
+    system: "跟随系统",
+    light: "浅色",
+    dark: "深色",
+  };
+  const icon = (() => {
+    if (pref === "system") {
+      // 半月: 跟随系统
+      return (
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none">
+          <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M 12 4 A 8 8 0 0 1 12 20 Z" fill="currentColor" />
+        </svg>
+      );
+    }
+    if (resolved === "light") {
+      // 太阳
+      return (
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none">
+          <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.6" fill="currentColor" fillOpacity="0.3" />
+          <line x1="12" y1="3" x2="12" y2="5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          <line x1="12" y1="19" x2="12" y2="21" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          <line x1="3" y1="12" x2="5" y2="12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          <line x1="19" y1="12" x2="21" y2="12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          <line x1="5.5" y1="5.5" x2="6.9" y2="6.9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          <line x1="17.1" y1="17.1" x2="18.5" y2="18.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          <line x1="5.5" y1="18.5" x2="6.9" y2="17.1" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          <line x1="17.1" y1="6.9" x2="18.5" y2="5.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        </svg>
+      );
+    }
+    // 月亮
+    return (
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none">
+        <path
+          d="M 20 14 A 8 8 0 1 1 10 4 A 6 6 0 0 0 20 14 Z"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          fill="currentColor"
+          fillOpacity="0.3"
+        />
+      </svg>
+    );
+  })();
+
+  return (
+    <button
+      type="button"
+      onClick={cycle}
+      title={`主题: ${labelMap[pref]} (点击切换)`}
+      className={`flex items-center gap-2 rounded px-2 py-1.5 text-parchment/55 transition-colors hover:bg-amber-dim/[0.08] hover:text-amber-glow ${
+        expanded ? "w-full" : "justify-center"
+      }`}
+    >
+      <span className="shrink-0">{icon}</span>
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.span
+            initial={{ opacity: 0, x: -4 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -4 }}
+            transition={{ duration: 0.12 }}
+            className="truncate text-[11px] tracking-wider"
+          >
+            {labelMap[pref]}
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </button>
   );
 }
 

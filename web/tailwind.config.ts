@@ -6,22 +6,23 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Candlelight palette
+        // 通过 CSS 变量定义, 主题切换时全局同时变化。
+        // 用 rgb(... / <alpha-value>) 模板支持 Tailwind 的 /XX opacity 修饰符。
         ink: {
-          DEFAULT: "#0E0D0C",
-          deep: "#0A0908",
-          soft: "#1A1815",
+          DEFAULT: "rgb(var(--ink-rgb) / <alpha-value>)",
+          deep: "rgb(var(--ink-deep-rgb) / <alpha-value>)",
+          soft: "rgb(var(--ink-soft-rgb) / <alpha-value>)",
         },
         amber: {
-          glow: "#E8B563",
-          warm: "#D89550",
-          ember: "#B86D3A",
-          dim: "#6B4A2B",
+          glow: "rgb(var(--amber-glow-rgb) / <alpha-value>)",
+          warm: "rgb(var(--amber-warm-rgb) / <alpha-value>)",
+          ember: "rgb(var(--amber-ember-rgb) / <alpha-value>)",
+          dim: "rgb(var(--amber-dim-rgb) / <alpha-value>)",
         },
         parchment: {
-          DEFAULT: "#E8DCC4",
-          warm: "#D4C4A0",
-          dark: "#2A2521",
+          DEFAULT: "rgb(var(--parchment-rgb) / <alpha-value>)",
+          warm: "rgb(var(--parchment-warm-rgb) / <alpha-value>)",
+          dark: "rgb(var(--parchment-dark-rgb) / <alpha-value>)",
         },
       },
       fontFamily: {

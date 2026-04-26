@@ -106,17 +106,49 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Candlelight palette — a few CSS custom props for the non-Tailwind bits */
+/* ──────────────────────────────────────────────────────
+ * 主题色板 — 双主题 (深色蜡烛 / 浅色羊皮纸)
+ * 默认深色; 加 .theme-light 类切换到浅色。
+ * RGB 三元组形式, Tailwind 通过 rgb(var(--xxx) / <alpha-value>) 引用
+ * 支持 /40 这种 opacity 修饰符。
+ * ────────────────────────────────────────────────────── */
 :root {
+  /* 深色蜡烛 (默认) */
+  --ink-rgb: 14 13 12;
+  --ink-deep-rgb: 10 9 8;
+  --ink-soft-rgb: 26 24 21;
+  --amber-glow-rgb: 232 181 99;
+  --amber-warm-rgb: 216 149 80;
+  --amber-ember-rgb: 184 109 58;
+  --amber-dim-rgb: 107 74 43;
+  --parchment-rgb: 232 220 196;
+  --parchment-warm-rgb: 212 196 160;
+  --parchment-dark-rgb: 42 37 33;
+  /* 非 Tailwind 直接引用的旧变量, 仍保留 */
   --ink: #0e0d0c;
   --ink-deep: #0a0908;
   --ink-soft: #1a1815;
   --amber-glow: #e8b563;
-  --amber-warm: #d89550;
-  --amber-ember: #b86d3a;
-  --amber-dim: #6b4a2b;
   --parchment: #e8dcc4;
-  --parchment-dark: #2a2521;
+}
+
+.theme-light {
+  /* 浅色羊皮纸 — 暖奶油基底 + 深琥珀强调 (对比度提足以读) */
+  --ink-rgb: 245 237 216;        /* 主背景: 暖奶油 */
+  --ink-deep-rgb: 232 222 196;   /* 略深, 用于 sidebar / footer */
+  --ink-soft-rgb: 251 245 226;   /* 略浅, 用于卡片内层 / focused 输入 */
+  --amber-glow-rgb: 162 110 36;  /* 深琥珀, 替代标题/强调色 (对比度 ≥ 4.5) */
+  --amber-warm-rgb: 138 84 24;
+  --amber-ember-rgb: 110 60 18;
+  --amber-dim-rgb: 196 170 124;  /* 浅色边框 / 分隔线 */
+  --parchment-rgb: 42 37 33;     /* 主文字: 深 ink */
+  --parchment-warm-rgb: 80 64 50;
+  --parchment-dark-rgb: 130 120 108;
+  --ink: #f5edd8;
+  --ink-deep: #e8dec4;
+  --ink-soft: #fbf5e2;
+  --amber-glow: #a26e24;
+  --parchment: #2a2521;
 }
 
 html,
@@ -133,7 +165,7 @@ body,
   overflow: hidden;
 }
 
-/* Dim vignette + subtle candle-flicker glow from the center */
+/* 深色: 暗角 + 烛光晕 */
 body::before {
   content: "";
   position: fixed;
@@ -153,13 +185,23 @@ body::before {
   pointer-events: none;
   z-index: 0;
 }
+/* 浅色: 去掉暗角, 留淡淡羊皮纸暖调 */
+.theme-light body::before,
+body.theme-light::before {
+  background:
+    radial-gradient(
+      ellipse at center,
+      rgba(232, 181, 99, 0.05) 0%,
+      transparent 50%
+    );
+}
 
 /* Serif for headings / the question */
 .font-serif {
   font-family: "Cormorant Garamond", "Noto Serif SC", Georgia, serif;
 }
 
-/* Thin scrollbar for the statement text drawers */
+/* Thin scrollbar — 用主题变量, 浅/深都好看 */
 .scroll-thin::-webkit-scrollbar {
   width: 6px;
 }
@@ -167,11 +209,11 @@ body::before {
   background: transparent;
 }
 .scroll-thin::-webkit-scrollbar-thumb {
-  background: rgba(232, 181, 99, 0.2);
+  background: rgb(var(--amber-glow-rgb) / 0.2);
   border-radius: 3px;
 }
 .scroll-thin::-webkit-scrollbar-thumb:hover {
-  background: rgba(232, 181, 99, 0.4);
+  background: rgb(var(--amber-glow-rgb) / 0.4);
 }
 
 /* The seat's glow ring when speaking — soft pulsing amber */
