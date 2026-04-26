@@ -26,6 +26,8 @@ export interface TranscriptRow {
   question: string;
   convened_at: string;
   personas: string[];
+  /** 关联 ~/.council/live/<run_id>.jsonl, 可用于"原样重放"事件流 (新建 transcript 才有, 旧的可能为空) */
+  run_id?: string;
 }
 
 export interface PersonaRow {
@@ -86,6 +88,11 @@ export const api = {
   transcript: (id: string) =>
     getJSON<TranscriptRow & { body: string }>(
       `/api/transcripts/${encodeURIComponent(id)}`,
+    ),
+  /** 取某次 run 的事件流, 用于"原样重放" (零 LLM 成本) */
+  runReplay: (runId: string) =>
+    getJSON<{ run_id: string; events: import("./types").CouncilEvent[] }>(
+      `/api/runs/${encodeURIComponent(runId)}/replay`,
     ),
 
   personas: () =>

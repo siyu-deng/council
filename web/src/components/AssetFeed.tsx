@@ -14,13 +14,15 @@ type ViewerKind = "transcript" | "session" | "skill" | "persona";
 interface Props {
   filter: FilterType;
   onConvene?: (q: string) => void;
+  /** 静态重放某次议会的事件流 (零 LLM, 用于"原样重开") */
+  onReplay?: (runId: string, fallbackQuestion?: string) => void;
   /** 把问题塞回输入框, 让用户改后再召集 (UX 改进: 不一键直接 convene) */
   onPrefill?: (q: string) => void;
   /** 点卡片打开内容查看器 */
   onOpenAsset?: (target: { kind: ViewerKind; id: string; question?: string }) => void;
 }
 
-export function AssetFeed({ filter, onConvene, onPrefill, onOpenAsset }: Props) {
+export function AssetFeed({ filter, onConvene, onReplay, onPrefill, onOpenAsset }: Props) {
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [transcripts, setTranscripts] = useState<TranscriptRow[]>([]);
   const [personas, setPersonas] = useState<PersonaRow[]>([]);
@@ -144,6 +146,7 @@ export function AssetFeed({ filter, onConvene, onPrefill, onOpenAsset }: Props) 
             }`}
             item={item}
             onConvene={onConvene}
+            onReplay={onReplay}
             onPrefill={onPrefill}
             onArchived={reload}
             onOpenAsset={onOpenAsset}
@@ -157,12 +160,14 @@ export function AssetFeed({ filter, onConvene, onPrefill, onOpenAsset }: Props) 
 function FeedCard({
   item,
   onConvene,
+  onReplay,
   onPrefill,
   onArchived,
   onOpenAsset,
 }: {
   item: FeedItem;
   onConvene?: (q: string) => void;
+  onReplay?: (runId: string, fallbackQuestion?: string) => void;
   onPrefill?: (q: string) => void;
   onArchived?: () => void;
   onOpenAsset?: (target: { kind: ViewerKind; id: string; question?: string }) => void;
@@ -254,6 +259,20 @@ function FeedCard({
           ))}
         </div>
         <div className="flex items-center gap-3 text-[11px] tracking-wider">
+          {/* 原样重放: 重读 JSONL 事件流, 零 LLM 成本, 重现当时辩论的视觉过程 */}
+          {onReplay && t.run_id && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onReplay(t.run_id!, t.question);
+              }}
+              className="text-amber-glow/65 transition-colors hover:text-amber-glow"
+              title="重放当时的事件流 (动画式 · 不调 LLM · 零成本)"
+            >
+              ⟳ 原样重放
+            </button>
+          )}
           {onPrefill && (
             <button
               type="button"
@@ -261,23 +280,24 @@ function FeedCard({
                 e.stopPropagation();
                 onPrefill(t.question);
               }}
-              className="text-amber-glow/60 transition-colors hover:text-amber-glow"
-              title="把问题填进输入框 (可改后再召集)"
+              className="text-parchment/45 transition-colors hover:text-amber-glow"
+              title="把问题填进输入框, 可改后再召集 (会调 LLM)"
             >
               ↻ 改一改再问
             </button>
           )}
-          {onConvene && (
+          {/* 没 run_id 的旧 transcript: 显示一个"重新召集 LLM" 退路, 但标明是会调 LLM */}
+          {!t.run_id && onConvene && (
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 onConvene(t.question);
               }}
-              className="text-parchment/40 transition-colors hover:text-amber-glow"
-              title="原样再召集一次"
+              className="text-parchment/35 transition-colors hover:text-orange-300"
+              title="该议会无事件流存档 (旧版生成), 只能重新调 LLM"
             >
-              ⟳ 原样重开
+              ⟳ 重新召集 (调 LLM)
             </button>
           )}
         </div>

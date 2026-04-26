@@ -292,6 +292,7 @@ export async function convene(
     question,
     convened_at: new Date().toISOString(),
     personas: selected.map((p) => p.ref),
+    run_id: runId, // 关联事件流, 让网页能"原样重放"
   };
 
   const filePath = writeTranscript(fm, body);

@@ -618,12 +618,22 @@ async function handleApi(req: Request, url: URL): Promise<Response> {
   }
 
   // GET /api/transcripts — 列出所有议会记录
+  // 旧版本 transcript 没有 run_id 字段 — 这里 fallback 到事件流文件名前缀匹配:
+  // convene engine 写 transcript_id = "<date>-<slug>", run_id = "<date>-<slug>-<rand>"
+  // 所以扫 live/<*.jsonl> 看哪个文件名以 transcript.id 起头就是它的事件流
   if (url.pathname === "/api/transcripts" && req.method === "GET") {
+    const liveRuns = bus.listRuns(); // 已经按 mtime 倒序
+    function findRunIdFor(transcriptId: string): string | undefined {
+      // 优先精确匹配 (新版本会把 run_id 写进 transcript)
+      // 这里只做名字推断: run_id 以 transcript_id 开头
+      return liveRuns.find((r) => r.startsWith(`${transcriptId}-`)) || undefined;
+    }
     const rows = listTranscripts().map((t) => ({
       id: t.data.id,
       question: t.data.question,
       convened_at: t.data.convened_at,
       personas: t.data.personas,
+      run_id: t.data.run_id ?? findRunIdFor(t.data.id),
     }));
     return json({ transcripts: rows });
   }
@@ -634,7 +644,11 @@ async function handleApi(req: Request, url: URL): Promise<Response> {
     const id = decodeURIComponent(transMatch[1]);
     try {
       const t = getTranscript(id);
-      return json({ ...t.data, body: t.body });
+      // 同样 fallback: 旧 transcript 没 run_id 时按文件名前缀推断
+      const runId =
+        t.data.run_id ??
+        bus.listRuns().find((r) => r.startsWith(`${id}-`));
+      return json({ ...t.data, run_id: runId, body: t.body });
     } catch {
       return json({ error: "not found" }, 404);
     }

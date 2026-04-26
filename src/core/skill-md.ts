@@ -285,6 +285,8 @@ export interface TranscriptFrontmatter {
   question: string;
   convened_at: string;
   personas: string[];
+  /** 关联的事件流 run_id (~/.council/live/<run_id>.jsonl), 用于"原样重放" */
+  run_id?: string;
 }
 
 export function writeTranscript(data: TranscriptFrontmatter, body: string): string {

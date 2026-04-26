@@ -14,6 +14,8 @@ type AppMode = "council" | "capture";
 interface Props {
   prefillQuestion: string;
   onConvene: (q: string) => void;
+  /** "原样重开": 静态重放某次 run 的事件流 (零 LLM 成本) */
+  onReplay?: (runId: string, fallbackQuestion?: string) => void;
   isBusy: boolean;
   /** 当前主视图 (议会 / 捕获) */
   mode: AppMode;
@@ -112,6 +114,7 @@ const SIDEBAR_STORAGE_KEY = "council:sidebar:expanded";
 export function ConsoleShell({
   prefillQuestion,
   onConvene,
+  onReplay,
   isBusy,
   mode,
   onModeChange,
@@ -467,6 +470,7 @@ export function ConsoleShell({
                   <AssetFeed
                     filter={filter}
                     onConvene={onConvene}
+                    onReplay={onReplay}
                     onPrefill={setDraft}
                     onOpenAsset={(t) => setViewerTarget(t)}
                   />

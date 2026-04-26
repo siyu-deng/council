@@ -4,6 +4,7 @@ import { CaptureView } from "@/components/CaptureView";
 import { useCouncil } from "@/lib/store";
 import { playMock } from "@/lib/fixtures";
 import { CouncilSocket, startConvene } from "@/lib/ws";
+import { api } from "@/lib/api";
 
 type View = "council" | "capture";
 
@@ -35,6 +36,38 @@ export default function App() {
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
+
+  // 静态重放: 从 ~/.council/live/<run_id>.jsonl 拉事件 → 注入 store
+  // 完全不调 LLM, 几百毫秒重现一场过去的议会 (含动画)
+  // 失败 (旧 transcript 没存 run_id) 时静默回退到"prefill 让用户重 convene"
+  async function handleReplay(runId: string, fallbackQuestion?: string) {
+    try {
+      const { events } = await api.runReplay(runId);
+      if (!events || events.length === 0) throw new Error("no events");
+      reset();
+      // 按时间顺序 ingest, 用极小间隔 (10ms) 模拟流式动画
+      // 不用原始 ts 间隔 (会变成 27 秒重放, 太慢) 也不用 0ms (动画一闪而过)
+      let i = 0;
+      const ingest = useCouncil.getState().ingest;
+      function step() {
+        if (i >= events.length) return;
+        // 一帧最多 ingest 8 个 chunk (字符级 chunk 数千, 慢慢喂会卡)
+        const batch = Math.min(8, events.length - i);
+        for (let k = 0; k < batch; k++) {
+          ingest(events[i + k]);
+        }
+        i += batch;
+        if (i < events.length) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    } catch (err) {
+      console.warn("replay failed, fallback to prefill:", err);
+      if (fallbackQuestion) {
+        // 旧 transcript 没存 run_id, 把问题塞回输入框让用户决定
+        setPrefillQ(fallbackQuestion);
+      }
+    }
+  }
 
   // Kick off a new convene via HTTP.
   // 必须放在 useEffect 之前定义 (用 useCallback 让引用稳定)
@@ -132,6 +165,7 @@ export default function App() {
       <ConsoleShell
         prefillQuestion={prefillQ}
         onConvene={handleConvene}
+        onReplay={handleReplay}
         isBusy={running}
         mode={view}
         onModeChange={navigate}
