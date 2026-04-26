@@ -6,18 +6,28 @@
 
 ## 📣 演讲 / Demo 材料
 
+**上场必看的 3 份** (按顺序):
+
+| # | 文件 | 用途 |
+|---|---|---|
+| 1 | [`story.md`](story.md) | **故事骨架 (founder narrative)** — 5 幕剧, 记不住稿可以回到的"那个东西" |
+| 2 | [`pitch.md`](pitch.md) | **6 分钟现场讲稿** — 计时段落 + Slide 映射 + 5/8 分钟可压扩 |
+| 3 | [`demo-runbook.md`](demo-runbook.md) | **上场操作手册** — pre-flight checklist + step-by-step demo + failure recovery + Q&A 弹药 |
+
+**辅助材料**:
+
 | 文件 | 用途 |
 |---|---|
-| [`pitch-3min.md`](pitch-3min.md) | 黑客松现场 **3 分钟讲稿** (计时段落 + 备用段 + Q&A 弹药) |
-| [`pitch-lines.md`](pitch-lines.md) | **Demo 金句卡** — 每个 prompt 节点一句可上台直接念的话 (口袋卡) |
-| [`demo-script.md`](demo-script.md) | 早期 demo 流脚本 (背景叙事版) |
-| [`demo-runbook.md`](demo-runbook.md) | **上场前操作手册** — preflight、环境变量、剪贴板预备、剧本演练 |
-| [`architecture/architecture.md`](architecture/architecture.md) | 完整产品架构思考文档 (384 行, 长篇说理) |
+| [`pitch-lines.md`](pitch-lines.md) | Demo 金句卡 — 每个 prompt 节点一句可上台直接念的话 (口袋卡, 临场翻看) |
+| [`pitch-3min.md`](pitch-3min.md) | 早期 3 分钟版 (历史快照, 已被 `pitch.md` 取代) |
+| [`demo-script.md`](demo-script.md) | 早期 demo 流脚本 (历史快照, 锚句仍是旧版) |
+| [`architecture/architecture.md`](architecture/architecture.md) | 完整产品架构思考文档 (长篇说理, Q&A 时背景查) |
 
-**上场前序列**:
-1. 跑 `demo-runbook.md` 里的 preflight (验证全部 API 通)
-2. 桌面留 `pitch-3min.md` 计时讲稿 + `pitch-lines.md` 金句卡
-3. 浏览器预开两个 tab: `localhost:3737` web · 一个 Cursor 窗口准备演 MCP
+**上场前序列** (建议 13:30 开始):
+
+1. **13:30-13:55** 跑 [`demo-runbook.md`](demo-runbook.md) 的 pre-flight 6 个 step (25 分钟)
+2. **13:55** 进场就位, 桌面留 [`pitch.md`](pitch.md) 讲稿 + [`pitch-lines.md`](pitch-lines.md) 金句
+3. **临场前 30 秒** 默念 [`story.md`](story.md) 的"故事的隐藏结构"那 30 字
 
 ---
 

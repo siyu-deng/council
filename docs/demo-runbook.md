@@ -1,241 +1,333 @@
-# Council · Hackathon Demo 脚本 v2
+# Council 路演 Demo 操作手册
 
-> **核心信息** (反复回到这里): **Hermes 让 AI 更像你。Council 让你更像你。**
->
-> 每段结束前, 脑子里默念这句 — 没在强化这个判断就删掉。
-
-**时长**: 3 分钟 · **上台形式**: 一块大屏, 一个浏览器, 一个终端 (小窗口放最下角)
+> **场景**: EvoTavern 现场路演 (报告厅)
+> **时间**: 14:00 上场 · 13:30 开始 pre-flight · 13:55 进场就位
+> **目标**: demo 命脉的安全网 — 网络一抖, 按这里走.
 
 ---
 
-## Pre-flight (上台前 5 分钟做完)
+# ⏰ 13:30 - 13:55 · Pre-flight (25 分钟)
+
+每一项做完打勾. 任意一项 ✗ 都不要上场跑 live demo, 切到"无 demo 路径".
+
+## Step 1 — 桌面环境清理 (3 min)
 
 ```bash
-# 1. 一键预检 (会跑真实 API, 约 2 分钟, 全绿即可)
-cd ~/path/to/councli
-bun preflight                    # 全绿 = 可以上场
-
-# 2. 干净的 demo 环境
-rm -rf /tmp/.council-demo
-export COUNCIL_HOME=/tmp/.council-demo
-alias council='bun run ~/path/to/councli/bin/council.ts'
-
-# 3. 初始化 + 预先 distill 好你自己的 self persona (让议会有"你自己的声音")
-council init
-cat 自我的材料/Claude-用第一性原理重构饮食系统.md | council capture
-council distill --auto
-# 现在 ~/.council-demo/personas/self/ 里有 3-4 个你自己的 persona
-
-# 4. 准备一段真实对话在剪贴板 (后面给 demo 闪粘贴用)
-pbcopy < 自我的材料/Claude-探索号.md
-# 或者准备一段短的也行, 关键是真实
-
-# 5. 预热浏览器 (避免冷启动卡)
-open "http://localhost:3737/?mock=1"
-# 看一眼 mock 议会是否显示正常, 关掉标签页
-
-# 6. 全屏终端, 18pt 以上字体, 干净桌面
+[ ] 关掉所有不相关 app (微信 / Discord / Slack / 邮箱通知)
+[ ] 浏览器只留 2 个 tab: localhost:3737, Cursor 网页 (如果用)
+[ ] 终端只留 1 个窗口, 字体调到 16pt+
+[ ] 屏幕亮度调到 100%
+[ ] 系统通知关闭 / 勿扰开启
+[ ] 关掉自动锁屏
 ```
 
----
-
-## 0:00 – 0:25 · 钩子 (质疑整个赛道)
-
-**站姿**: 空手站在台上, 不开终端, 看观众。
-
-**台词** (慢):
-
-> "今天这场, 六个人里有四个在做'会成长的 AI 助手'。
->
-> 我想先问一个更锋利的问题——
->
-> 在 AI 越来越聪明的时代, **真正会被淘汰的, 不是不用 AI 的人, 是思考方式从来没被自己审视过的人**。
->
-> 那些人每天用 AI, 但他们的思考路径、他们的判断框架、他们面对一个模糊问题怎么从零拆到清晰——
->
-> **没有一个产品在认真收集这些东西。**
->
-> Hermes 让 AI 记住你。Evolver 让 AI 自我进化。Second Me 训练你的分身。
->
-> 我做的 Council, 问了另一个问题: **我们不需要更聪明的 AI, 我们需要的是让自己的思考变得结构化的工具。**"
-
-**目的**: 从"又一个 AI Agent"的听觉疲劳里把评委拽出来。
-
----
-
-## 0:25 – 0:50 · Council 是什么 (一句话)
-
-**动作**: 走到屏幕前, 一键打开浏览器:
+## Step 2 — API key + Council 状态 (5 min)
 
 ```bash
-council convene "我应该先做一个不完美的产品推出去吗" --watch
+echo $ANTHROPIC_API_KEY                    # ✓ 应有 sk-ant- 开头的值
+council --version                          # ✓ 应返回 0.1.1
+council persona list | head -5             # ✓ 应看到 4 个 self + mentor + role
+council session list | head -3             # ✓ 应看到 6+ 段 session
+ls ~/.council/transcripts/ | wc -l         # ✓ 应 ≥ 6 (历史议会 fallback 用)
 ```
 
-浏览器自动弹出圆桌, 空无一人, 中央是你的问题。
-终端默默在角落打印日志 (观众不需要看)。
-
-**台词** (念完一行停一秒):
-
-> "Council。一个思考议会。
->
-> **Hermes 让 AI 更像你。Council 让你更像你。**
->
-> 三件事:
-> 第一, **捕获**你和 AI 每一次有价值的思考 —— 不是你说过什么, 是你怎么想问题。
-> 第二, **蒸馏**这些思考, 变成你可以召集的 persona。
-> 第三, 当你下次面对一个难决策, **召开你的议会** —— 你蒸馏的纳瓦尔、乔布斯、你自己的第一性原理, 一起辩论, 你做最终决策。"
-
-**关键**: 这时候浏览器圆桌上开始有东西了 — summon 已经在后台跑, 3 把椅子 "材料化" 出来, 每个 persona 图腾(🧘 naval / 💎 jobs / 🎭 devil's advocate)慢慢亮起。
-
----
-
-## 0:50 – 2:15 · 现场演示 (85 秒, demo 命脉)
-
-**不要解释, 让屏幕自己说话。**
-
-### 0:50 – 1:25 · 议会开场 (Statements + Cross-Exam)
-
-浏览器上:
-- 三把椅子同时发光 — **statements 并行** (这是后端的能力, 观众会觉得"他们三个在同时想")
-- 每个 persona 说完, 椅背上展开一段话
-- Cross-exam 阶段, 椅子之间画出虚线箭头, 带一个小标签 ("jobs ⇆ naval: 你在回避规模问题")
-
-**一句旁白** (指着屏幕):
-
-> "注意这里 — 他们不是轮流发言, 是**同时在想**。然后他们互相指出对方的盲点。
->
-> 这是 Hermes 单 agent 架构做不到的 — 你得有多个视角, 才能有真实的分歧。"
-
-### 1:25 – 1:55 · Synthesis — "决议卡"现身 (这 30 秒是全场的峰值)
-
-中央浮现一张羊皮纸质感的"决议卡", 四段:
-
-```
-共识
-  • 完美不是决策标准
-  • 核心价值主张的清晰度才是
-  • ...
-
-仍存分歧 ⇄
-  jobs ⇆ self:...  (清晰度是前置还是推出的结果)
-
-如果今天必须决定
-  推出去, 但设一个明确的失败阈值...
-  (这段就是"建议", 直接、有偏见, 不和稀泥)
-
-本次议会暴露出的新思考模式
-  "前置条件陷阱" — 你用 X 来论证为什么不做 X...
-```
-
-**停在 "仍存分歧" 那段**, 手指屏幕, 停 2 秒:
-
-> "注意 — 议会**没有给我一个标准答案**。它告诉我这里仍有分歧。
->
-> 一个永远同意你的议会, 是一个你不需要的议会。**分歧本身才是产出**。"
-
-这是本场的最高光时刻。**念完停一秒。**
-
-### 1:55 – 2:15 · MCP 出圈 (Council 可携带)
-
-**动作**: 回到终端:
+## Step 3 — Live server 起来 (2 min)
 
 ```bash
-council export --mcp
+[ ] council live  &                         # 后台跑, 起在 :3737
+[ ] curl -s http://localhost:3737/api/health  # ✓ 应返回 ok
+[ ] 浏览器打开 http://localhost:3737
+[ ] 资产 feed 应显示 (历史 sessions / personas / transcripts)
+[ ] 右上角连接状态: ✓ "已连通" (不是 "离线")
 ```
 
-终端显示:
+## Step 4 — 预跑议会 (5 min, ⭐ 关键)
+
+**目的**: 留一个 fallback URL. 万一现场议会卡, 直接打开这个 URL 看 trace.
+
+```bash
+[ ] 在 web 输入框打: "我应该把当前 4 个 self persona 合并成 2 个吗?"
+[ ] ⌘+Enter 召集
+[ ] 验证时间:
+    - ≤ 30 秒: 三个 statement 全出
+    - ≤ 60 秒: cross-exam 出现 (Jobs 反驳 reframe 那段)
+    - ≤ 120 秒: synthesis 完成
+[ ] 看上方 URL bar, 记下 ?run_id=<...>
+    例如: http://localhost:3737/?run_id=2026-04-26-...
+[ ] 把这个 URL 收藏 / 复制到便签 → 这是 fallback (备用)
 ```
-✓ MCP server generated.
-  add to ~/Library/Application Support/Claude/claude_desktop_config.json
+
+## Step 5 — Cursor MCP 验证 (5 min)
+
+```bash
+[ ] 打开 Cursor (不是网页, 是 app)
+[ ] 新建对话窗口
+[ ] 输入: /as_me
+[ ] 应触发 council_who_am_i, 返回 4 个 self persona 的回显
+[ ] 如果 Cursor MCP 没启用, 检查 ~/.cursor/mcp.json 里 council 条目
 ```
 
-**切到 Claude Desktop** (已提前打开, MCP 已配好), 新对话:
+## Step 6 — 上场材料就位 (5 min)
 
-> 用户: 我应该全职做 Council 吗?
-
-Claude 自动调用 `council_convene` tool, 等 30 秒, 返回一张结构化的议会结论。
-
-**一句旁白**:
-
-> "现在 Claude 在任何对话里, 都能召开我的议会。我的思考, 跟着我跨工具走。**我的议会也可以装进 Mac 原生 App 里** — 这是独立打包的桌面版" (手指 Dock 上的 Council.app 图标)。
-
----
-
-## 2:15 – 2:40 · 战略地图 (25 秒钉进评委脑子)
-
-**动作**: 切到那张 SVG 战略地图 (`相关材料/council_strategic_map.svg`)。
-
-**台词**:
-
-> "我的位置。
->
-> 主流玩家 — Hermes、Evolver、Second Me, **主语都是 AI**。
->
-> 协议层 — 花叔的 nuwa-skill、Agent Skills CLI、AGENTS.md, 他们**做组件**。
->
-> Council 在这里 — **主语是人**。我不做组件, 不和主流玩家竞争。
->
-> 我消费他们的组件, 补他们世界观的空白。**花叔蒸馏的每一个人物, 都是我议会里的一把椅子**。Second Me 训练出的模型, 可以作为我的 self persona。
->
-> Council 让整个生态变得更有用。这不是竞争位置, 是协同位置。"
+```bash
+[ ] PDF 用 Preview 打开 council-pitch.pdf, 进入全屏 (⌘+F)
+[ ] 第 1 页 (cover) 在最上层
+[ ] 切换 PPT 用键盘 ← → (不要用鼠标, 容易抖)
+[ ] iPhone / 第二屏放 docs/pitch.md (讲稿) 滚到顶部
+[ ] 桌面 Finder 备好 docs/pitch-lines.md (口袋金句, 临时翻看)
+```
 
 ---
 
-## 2:40 – 3:00 · 收尾 (慢, 20 秒)
+# 🎬 14:00 - 14:06 · 上场流 (6 分钟)
 
-**动作**: 关屏幕, 回到空手站姿。
+## 全程时间地图
 
-**台词**:
+```
+0:00 ─────── 0:45 ─── 1:30 ─────────────── 4:00 ─── 4:30 ─── 5:00 ─── 5:30 ─── 6:00
+   Hook       Pose         Demo (核心)        总结    反预期    协同    Close
+   Slide 1   Slide 2       Live web           Slide 3 (无)     Slide 5  回 Slide 1
+                                              ↑ 安全切回 Slide 3+4 路径
+```
 
-> "今年所有人都在做'更聪明的 AI'。
->
-> 我赌另一边 — **人的思考本身, 是值得被基础设施化的资产**。
->
-> 短期, Council 是一个开发者的 CLI 工具。
->
-> 中期, 它是每个认真做决策的人, 都应该有的东西。
->
-> 长期 — 当每个人都有自己的 Council, Council 之间可以互相借调。
->
-> **我的议会可以请教你的议会**。那时候, 我们讨论的就不是 AI 网络, 是思考网络。
->
-> 今天我只做了第一步。
->
-> 谢谢。"
+## 0:00-0:45 · Hook
 
----
+**屏幕**: PPT Slide 1 (cover) — 一直在.
 
-## 最危险的三个点 (及兜底)
+**站姿**: 中央, 不开终端, 看观众.
 
-| 风险 | 兜底 |
-|---|---|
-| **Synthesis API 卡壳** (最危险, 30 秒不出结果) | 提前 convene 一次产出 transcript, 演示前 `council convene "<问题>" --watch` 配合 `?run_id=<已有 id>` 触发 replay, 事件流从文件重放而不重新调 API |
-| Claude Desktop MCP 连接失败 | 跳过"出圈"一节, 转到 Council.app 双击展示 |
-| 浏览器没自动弹出 / LAN IP 冲突 | 手动 `open http://127.0.0.1:3737/`, 或用事先准备的二维码截图 |
-| API rate limit | 备用 `COUNCIL_MOCK=1 council convene ... --watch` — mock 流量走相同事件总线, 视觉完全一致 |
+**核心动作**: 把"AI 自我进化 vs 人没曲线"这个反差扎下去.
+
+**关键句** (重读):
+> "AI 在加速自我进化. **人这一条曲线, 没人替你画.**"
 
 ---
 
-## 三件要反复排练到条件反射的事
+## 0:45-1:30 · Pose · 锚句登场
 
-1. **锚句** — "Hermes 让 AI 更像你, Council 让你更像你" — 必须张口就来, 不念稿
-2. **指"仍存分歧"那个动作** — 这是整场 demo 最重要的一个手势
-3. **最后一句慢** — "成为思考网络" 念完停 1 秒再鞠躬
+**屏幕**: 切 PPT Slide 2 (vs Competitors).
+
+**核心动作**: 主语反转的一句话定位 + 4 友商列举.
+
+**关键句** (重读, 中间停 1 秒):
+> "Evolver 让 Agent 自我进化. *(停 1 秒)* **Council 让人, 自我进化.**"
+
+(**"人"必须重读**)
 
 ---
 
-## 检查清单
+## 1:30-4:00 · Demo (核心 2.5 分钟)
 
-- [ ] `.env` 有合法 `ANTHROPIC_API_KEY`
-- [ ] `bun preflight` 全绿 (真实 API)
-- [ ] `~/.council-demo/personas/self/` 至少 3 个文件 (提前 distill 过)
-- [ ] 剪贴板有真实对话 (不是假数据)
-- [ ] Claude Desktop 已打开 + MCP 配置已加
-- [ ] Council.app 已 build 放 Dock (可选)
-- [ ] 字体 ≥ 18pt
-- [ ] 终端放右下角小窗, 浏览器铺满
-- [ ] 备份 transcript 在 `~/.council-backup/transcripts/` 就位
-- [ ] 音频可能被录, API Key 不要读出来
-- [ ] 手机静音
-- [ ] 战略地图 SVG 打开过, 确认能放大
-- [ ] 锚句默念 3 遍
+**屏幕**: 切到浏览器 `localhost:3737`.
+
+> ⚠️ **如果 web 没加载 / 卡住**: 立刻切回 PPT Slide 3 (Three Pipelines), 按"无 demo 路径"讲. 见下面 Failure Recovery.
+
+### Demo Step A (1:30-1:45) · 资产 feed
+
+**点击操作**: 不点, 让 feed 露 5-10 秒.
+
+**说**:
+> "这是我捕获的 5 段我自己的真实对话. Council 从里面蒸馏出了 4 个 self persona — **不是我写的, 是它从我说过的话里反向推出来的**."
+
+### Demo Step B (1:45-2:10) · 点开 self persona
+
+**点击操作**: 点 `self:reframe-before-execute` → 滚到"典型片段"段落.
+
+**说**:
+> "比如这个 — 它知道我会在执行前先质疑假设. confidence 0.95, 来源是 9 条原话.
+>
+> *(指典型片段)*
+>
+> 看, 都是我**原话逐字**引用. 这是 Council 的**真实性守门员** — 找不到逐字证据, 系统就不写."
+
+### Demo Step C (2:10-2:40) · 召集议会
+
+**点击操作**: 回 feed → 底部输入框打字 → ⌘+Enter.
+
+**输入文本**: `我应该把当前 4 个 self persona 合并成 2 个吗?`
+
+**说**:
+> "现在我问它一个真问题 —
+>
+> *(打字)*
+>
+> ⌘ 召集.
+>
+> *(圆桌升起 → mini roundtable)*
+>
+> 三个 persona 自动被选了. 召集理由写得清清楚楚."
+
+> ⚠️ **如果议会卡 30 秒+**: 立刻打开预跑那个 `?run_id=...` URL, 直接看 trace. 评委看不出区别.
+
+### Demo Step D (2:40-3:30) · Cross-exam (灵魂帧)
+
+**点击操作**: 等流式跑完 → 滚到 cross-exam 段.
+
+**说**:
+> "三个 persona 同时独立表态. 但议会的灵魂在这里 —
+>
+> *(滚到 cross-exam 卡片)*
+>
+> **不是三个 AI 同时回答你, 是他们互相挑战.**
+>
+> 看 — Jobs 在反驳我自己: *'你都在假设 MCP 的价值是证明架构 — 这是创始人自我欺骗.'*
+>
+> 谁挑战了谁, 写得清清楚楚.
+>
+> 这种锋利, **不会出现在任何单 AI 对话里**. 因为单 AI 永远在'同意你 + 给建议'的模式里."
+
+### Demo Step E (3:30-3:50) · Synthesis
+
+**点击操作**: 滚到底部 synthesis 卡.
+
+**说**:
+> "最后, 综合卡片: 共识 / 仍存分歧 / 如果今天必须决定 / 本次议会暴露的新思考模式.
+>
+> Council **不会给你标准答案. 它给你结构化的分歧.**
+>
+> *一个永远同意你的议会, 是你不需要的议会.*"
+
+### Demo Step F (3:50-4:00) · Cursor MCP (杀手帧)
+
+**点击操作**: 切到 Cursor app → 输入 `/as_me`.
+
+**说**:
+> "最后一帧 —
+>
+> *(切到 Cursor)*
+>
+> 同一个 self persona, 在 Cursor 里召唤. 在 Claude Desktop 也能召唤. 在 Cherry Studio 也能.
+>
+> **我的认知身份, 跨所有 LLM**. 这是 MCP 给的可移植性, 别的'个人 AI'做不到."
+
+> ⚠️ **如果 Cursor 卡**: 别等. 直接说 "这是 MCP 协议的承诺, 任何 MCP 客户端都能调", 跳过.
+
+---
+
+## 4:00-4:30 · 链路总结
+
+**屏幕**: 切 PPT Slide 3 (Three Pipelines).
+
+**说**:
+> "刚才你看到的, 是 Council 的三条链路 —
+> Capture & Distill — 把对话蒸馏成会说话的人格.
+> Convene — 多视角议会, 互相挑战, 综合决策.
+> Refine & Evolve — 用得越多越懂你, 反馈影响下次召集.
+>
+> 11 个 prompt, 完整可追溯. 每条洞见都能溯源到原对话原话."
+
+---
+
+## 4:30-5:00 · 反预期 · PKM 时间方向
+
+**屏幕**: 不切 (留在 Slide 3).
+
+**说**:
+> "你可能在想 — 这听起来像 Notion AI / Obsidian.
+>
+> 但 PKM 让你**存得越多越好** — 它解决'我以前想过什么'.
+> Council 让你**忘得越合理越好** — 它解决'我此刻该怎么决定'.
+>
+> *(用手画 ← →)*
+>
+> 时间方向反了. PKM 是回望, Council 是前瞻."
+
+---
+
+## 5:00-5:30 · 战略协同
+
+**屏幕**: 切 PPT Slide 5 (Strategic Map).
+
+**说**:
+> "*(指地图)* 这是我对自己位置的看法.
+>
+> 主流玩家在这个象限 — 主语是 AI / Agent.
+> Council 在另一个象限 — 主语是人.
+>
+> 但更重要的是 — Council **不和他们竞争**.
+>
+> 我**消费**他们的组件:
+> - 花叔蒸馏的每一个人物 = 我议会里的一把椅子
+> - Second Me 的模型 = 我的 self persona 槽
+> - Hermes / Evolver 的 skill = 我的能力模块
+>
+> Council 让整个生态变得更有用. 这不是竞争位置, 是**协同位置**."
+
+---
+
+## 5:30-6:00 · Close · 长期愿景
+
+**屏幕**: 切回 PPT Slide 1 (Cover).
+
+**站姿**: 离开屏幕, 中央, 看观众.
+
+**说**:
+> "今天所有人都在做 Agent 的自我进化.
+>
+> 我赌另一边 — **人的自我进化, 也需要一份协议.**
+>
+> *(停一拍)*
+>
+> 短期看, Council 是一个 npm 包 + 一个 MCP server. **已经发布. 现在打开终端就能装.**
+>
+> 中期看, 它是每个认真做决策的人, 个人语境里的认知进化协议.
+>
+> 长期看 — 当每个人都有自己的 Council, **议会之间可以互相借调**.
+>
+> 我的议会可以请教你的议会. 那时候, 我们讨论的就不是 AI 网络, 是**思考网络**.
+>
+> *(停 2 秒)*
+>
+> 今天我只做了第一步.
+>
+> **Council. Your thinking, round-tabled.**
+>
+> 谢谢."
+
+*(掌声起 → 鞠躬 → 走下台)*
+
+---
+
+# 🆘 Failure Recovery 速查
+
+| 场景 | 立刻动作 | 怎么说 |
+|---|---|---|
+| **Web 加载失败** | 切 PPT Slide 3 | "我换 slide 讲架构, 同样能讲清楚" |
+| **议会卡 30 秒+** | 打开预跑 `?run_id=...` URL | (不解释, 自然滚到 trace) |
+| **Cursor 卡** | 跳过 Demo Step F | "这是 MCP 的承诺, 任何客户端都能调" |
+| **API 限流 (429)** | 切预跑 run_id URL | (同上, 不解释) |
+| **网络全断** | 切 PPT 全程 | "今天我把现场 demo 换成了图讲版, 更克制. Council 的本质..." |
+| **PPT 翻不动** | 用键盘 ← → 而不是鼠标 | (静默, 操作即可) |
+| **时间快超** | 砍 4:30 反预期段 | (直接到 5:00 战略) |
+| **时间太富** | 加可选段 | "我多讲一点真实性守门员的设计..." |
+
+---
+
+# 💬 Q&A 弹药 (评委 30 秒回答)
+
+| 问题 | 锚点 (1 句话) | 详细 (10 秒) |
+|---|---|---|
+| 和 Notion AI / GPT 自定义指令 区别? | **silo vs 跨 LLM** | 它们 lock-in 到一个客户端, Council 通过 MCP 在所有 LLM 客户端共享 |
+| self persona 怎么不会被 LLM 灌输? | **真实性守门员** | P1 prompt 强制 user_quote 字段必须能在原对话找到逐字证据, 找不到不写入 |
+| 数据存哪? 安全吗? | **你的资产你做主** | `~/.council/` 本地 markdown, git init 都行, 没有云依赖, 没有数据库 |
+| 怎么商业化? | **协议层 + 生态** | 不靠卖工具, 靠成为 AI Native 时代的认知身份层标准 (类比 OAuth 在 web 时代) |
+| 4 个 type 够用吗? | **MVP 脚手架** | 当前是默认, 长期会开放为用户可配置, 已识别但不在今天 scope |
+| 和花叔 nuwa-skill 是不是竞品? | **协同, 不竞争** | 花叔的人物 skill 直接作为我的 mentor persona, 我消费他的组件 |
+| Hermes/Second Me/Evolver 都是 AI 进化, 你这个区分会不会太抽象? | **三个具体证据** | (1) cross-exam 字面是 adversarial 不是 echo; (2) MCP 跨 LLM 是技术真实, 不是隐喻; (3) 真实性守门员强制原话引用 |
+| 你一个人 4 天怎么做到的? | **Council 自己帮我做的** | 我用 Council 蒸馏自己过往思考, 形成 4 个 self persona, 每次决策都召开议会 (这是 dogfood 故事) |
+
+---
+
+# 📋 13:55 进场前最后 3 件事 check
+
+```
+[ ] PDF 全屏在 Slide 1
+[ ] 浏览器 localhost:3737 资产 feed 加载好
+[ ] Cursor 窗口已打开, /as_me 已预试过一次
+[ ] 屏幕亮度 100%
+[ ] 通知关闭
+[ ] 心率 < 100 (深呼吸 3 次)
+[ ] 微笑
+
+Go.
+```
