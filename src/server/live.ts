@@ -16,8 +16,7 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { WebSocketServer, WebSocket as NodeWebSocket } from "ws";
 import { existsSync, readFileSync, statSync } from "node:fs";
-import { join, resolve, extname, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join, resolve, extname } from "node:path";
 import { bus, type CouncilEvent } from "../engine/events.ts";
 import { convene } from "../engine/convene.ts";
 import { captureCommand } from "../commands/capture.ts";
@@ -31,17 +30,19 @@ import {
   listSessions,
   listTranscripts,
   getTranscript,
+  archiveTranscript,
+  archiveSession,
   readIdentity,
 } from "../core/skill-md.ts";
 import { defaultAvatarFor, defaultColorFor } from "../engine/persona-visual.ts";
-import { isInitialized, paths } from "../core/paths.ts";
+import { isInitialized, paths, repoRoot } from "../core/paths.ts";
 import { loadDotEnv } from "../core/env.ts";
 
 loadDotEnv();
 
-// import.meta.dir 是 Bun 专有, Node 用 fileURLToPath 兼容
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const WEB_DIST = resolve(__dirname, "..", "..", "web", "dist");
+// 用 repoRoot() (向上找 package.json) — 兼容源码模式 (src/server/) 和 bundle 模式 (dist/),
+// 两种环境下都正确指向 <repo>/web/dist。之前用 import.meta.dir 在 dist 模式下会算错。
+const WEB_DIST = resolve(repoRoot(), "web", "dist");
 
 const MIME: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -614,6 +615,34 @@ async function handleApi(req: Request, url: URL): Promise<Response> {
       return json({ ...t.data, body: t.body });
     } catch {
       return json({ error: "not found" }, 404);
+    }
+  }
+
+  // POST /api/transcripts/:id/archive — 把 transcript 移到 _archive/ (软删除)
+  const archiveTransMatch = url.pathname.match(
+    /^\/api\/transcripts\/([^/]+)\/archive$/,
+  );
+  if (archiveTransMatch && req.method === "POST") {
+    const id = decodeURIComponent(archiveTransMatch[1]);
+    try {
+      const r = archiveTranscript(id);
+      return json({ ok: true, ...r });
+    } catch (err) {
+      return json({ ok: false, error: String(err) }, 404);
+    }
+  }
+
+  // POST /api/sessions/:id/archive — 同上, sessions 版
+  const archiveSessMatch = url.pathname.match(
+    /^\/api\/sessions\/([^/]+)\/archive$/,
+  );
+  if (archiveSessMatch && req.method === "POST") {
+    const id = decodeURIComponent(archiveSessMatch[1]);
+    try {
+      const r = archiveSession(id);
+      return json({ ok: true, ...r });
+    } catch (err) {
+      return json({ ok: false, error: String(err) }, 404);
     }
   }
 

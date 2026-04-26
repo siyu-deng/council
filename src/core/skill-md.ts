@@ -305,6 +305,26 @@ export function getTranscript(id: string): {
   return { data, body: content, filePath };
 }
 
+export function archiveTranscript(id: string): { archivedTo: string } {
+  const src = join(paths.transcripts(), `${id}.md`);
+  if (!existsSync(src)) throw new Error(`找不到 transcript: ${id}`);
+  const archiveDir = join(paths.transcripts(), "_archive");
+  ensureDir(archiveDir);
+  const dest = join(archiveDir, `${id}.md`);
+  renameSync(src, dest);
+  return { archivedTo: dest };
+}
+
+export function archiveSession(id: string): { archivedTo: string } {
+  const src = join(paths.sessions(), `${id}.md`);
+  if (!existsSync(src)) throw new Error(`找不到 session: ${id}`);
+  const archiveDir = join(paths.sessions(), "_archive");
+  ensureDir(archiveDir);
+  const dest = join(archiveDir, `${id}.md`);
+  renameSync(src, dest);
+  return { archivedTo: dest };
+}
+
 export function listTranscripts(): Array<{
   data: TranscriptFrontmatter;
   body: string;

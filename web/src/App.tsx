@@ -18,7 +18,7 @@ function detectView(): View {
 
 // Single-page app. Read ?mock=1, ?q=, ?run_id= from URL on boot.
 export default function App() {
-  const connection = useCouncil((s) => s.connection);
+  // connection 状态由 ConsoleShell 内部读取 store 渲染
   const runId = useCouncil((s) => s.runId);
   const running = useCouncil((s) => s.running);
   const setQuestion = useCouncil((s) => s.setQuestion);
@@ -128,71 +128,18 @@ export default function App() {
 
   return (
     <div className="relative h-full w-full overflow-hidden">
-      <PillNav view={view} onNavigate={navigate} />
-      <ConnectionBadge state={connection} />
-      {view === "council" ? (
-        <ConsoleShell
-          prefillQuestion={prefillQ}
-          onConvene={handleConvene}
-          isBusy={running}
-        />
-      ) : (
-        <CaptureView />
-      )}
+      {/* CaptureView 也用 ConsoleShell 包一层, 让 sidebar 在两个视图都能用 */}
+      <ConsoleShell
+        prefillQuestion={prefillQ}
+        onConvene={handleConvene}
+        isBusy={running}
+        mode={view}
+        onModeChange={navigate}
+      >
+        {view === "capture" ? <CaptureView /> : null}
+      </ConsoleShell>
     </div>
   );
 }
-
-function PillNav({
-  view,
-  onNavigate,
-}: {
-  view: View;
-  onNavigate: (v: View) => void;
-}) {
-  const base =
-    "rounded-full px-3 py-1 text-xs tracking-wider transition-colors";
-  const active = "text-amber-glow";
-  const inactive = "text-parchment/50 hover:text-amber-glow/80";
-  return (
-    <div className="pointer-events-auto absolute left-1/2 top-4 z-40 -translate-x-1/2 rounded-full border border-amber-dim/40 bg-ink-soft/70 px-1.5 py-1 backdrop-blur">
-      <div className="flex items-center gap-1 font-mono uppercase">
-        <button
-          type="button"
-          onClick={() => onNavigate("council")}
-          className={`${base} ${view === "council" ? active : inactive}`}
-        >
-          議會
-        </button>
-        <span className="text-parchment/20">·</span>
-        <button
-          type="button"
-          onClick={() => onNavigate("capture")}
-          className={`${base} ${view === "capture" ? active : inactive}`}
-        >
-          捕獲
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function ConnectionBadge({ state }: { state: string }) {
-  const label: Record<string, string> = {
-    offline: "离线",
-    connecting: "连接中…",
-    live: "已连通",
-    mock: "Mock 模式",
-  };
-  const tone: Record<string, string> = {
-    offline: "text-parchment/40",
-    connecting: "text-amber-warm animate-flicker",
-    live: "text-amber-glow",
-    mock: "text-amber-warm",
-  };
-  return (
-    <div className="pointer-events-none absolute right-4 top-4 z-40 flex items-center gap-2 text-xs">
-      <span className={`tag-ref ${tone[state] ?? ""}`}>🕯️ {label[state]}</span>
-    </div>
-  );
-}
+// 注: PillNav / ConnectionBadge 已经迁进 ConsoleShell 的 sidebar
+// (避免顶部浮窗与 sidebar 功能重叠 + 让"离线"在无议会时不再焦虑)

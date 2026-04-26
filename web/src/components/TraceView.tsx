@@ -97,9 +97,62 @@ export function TraceView() {
     synthesis: deriveStatus("synthesis"),
   } as const;
 
+  // 进度计算 — 4 阶段加权平均
+  // summon (10%) · statement (30%) · cross (30%) · synthesis (30%)
+  const progress = (() => {
+    if (finished) return 1;
+    let p = 0;
+    // summon
+    if (phase && phase !== "summon") p += 0.1;
+    else if (phase === "summon" && hasSeats) p += 0.1;
+    else if (phase === "summon") p += 0.05;
+    // statement
+    if (statementsDone) p += 0.3;
+    else if (hasSeats) p += 0.3 * (statementsCount / allSeats.length);
+    // cross
+    if (crossesDone) p += 0.3;
+    else if (hasSeats && (phase === "cross" || phase === "synthesis"))
+      p += 0.3 * (crossesCount / allSeats.length);
+    // synthesis
+    if (synthDone) p += 0.3;
+    else if (phase === "synthesis") {
+      // synthesis 是结构化, 一次性返回; 用 buffer 长度近似进度 (粗略)
+      const ratio = Math.min(synthBuf.length / 600, 0.95);
+      p += 0.3 * ratio;
+    }
+    return Math.min(p, 0.99);
+  })();
+
+  const progressPhaseLabel = synthDone
+    ? "已完成"
+    : phase === "synthesis"
+      ? "综合裁定中"
+      : phase === "cross"
+        ? "互相质疑中"
+        : phase === "statement"
+          ? "独立陈述中"
+          : phase === "summon"
+            ? "召集人选中"
+            : "准备中";
+
   return (
     <div className="relative h-full w-full overflow-y-auto scroll-thin">
-      <div className="mx-auto max-w-5xl px-8 pb-12 pt-12">
+      {/* ━━━ 顶部 sticky 进度条 ━━━ */}
+      <div className="sticky top-0 z-10 border-b border-amber-dim/15 bg-ink-deep/85 backdrop-blur">
+        <div className="mx-auto max-w-5xl px-8 py-2.5">
+          <div className="mb-1 flex items-center justify-between text-[10px] tracking-[0.18em] text-parchment/50">
+            <span>{progressPhaseLabel}</span>
+            <span className="text-parchment/35">{Math.round(progress * 100)}%</span>
+          </div>
+          <div className="h-1 overflow-hidden rounded-full bg-amber-dim/15">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-amber-warm to-amber-glow transition-all duration-300 ease-out"
+              style={{ width: `${progress * 100}%`, boxShadow: "0 0 8px rgba(232,181,99,0.5)" }}
+            />
+          </div>
+        </div>
+      </div>
+      <div className="mx-auto max-w-5xl px-8 pb-12 pt-8">
         {/* ━━━ 议题 ━━━ */}
         <h1 className="mb-4 text-center font-serif text-2xl italic leading-snug text-amber-glow md:text-3xl">
           {question || "(尚无议题)"}

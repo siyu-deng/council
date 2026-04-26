@@ -105,4 +105,20 @@ export const api = {
     });
     return res.json() as Promise<{ ok: boolean; run_id?: string; result?: unknown; error?: string }>;
   },
+
+  // —— 软删除: 把 transcript / session 移到 _archive/ —— 文件不丢, 列表不再显示
+  archiveTranscript: async (id: string) => {
+    const res = await fetch(
+      `/api/transcripts/${encodeURIComponent(id)}/archive`,
+      { method: "POST" },
+    );
+    return res.json() as Promise<{ ok: boolean; archivedTo?: string; error?: string }>;
+  },
+  archiveSession: async (id: string) => {
+    const res = await fetch(
+      `/api/sessions/${encodeURIComponent(id)}/archive`,
+      { method: "POST" },
+    );
+    return res.json() as Promise<{ ok: boolean; archivedTo?: string; error?: string }>;
+  },
 };
