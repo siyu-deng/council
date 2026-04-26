@@ -1,6 +1,6 @@
 {
   "name": "@moyu-build/council",
-  "version": "0.1.1",
+  "version": "0.3.0",
   "description": "Council — 你的思考议会。捕获对话, 蒸馏思维 skill, 召集多 persona 辩论。CLI + MCP server, 跨 Claude Desktop / Cursor / Claude Code 通用。",
   "keywords": [
     "council",
