@@ -1,26 +1,47 @@
 /**
  * Council Live Server
  * ───────────────────
- * 一条 Bun server 同时做三件事:
+ * 一条 Node HTTP server 同时做三件事:
  *
  * 1. HTTP — 托管 web/ 构建产物 (圆桌页面)
  * 2. WebSocket `/ws?run_id=<id>` — 订阅 run 的实时事件, 连接时自动 replay 历史
- * 3. HTTP `/api/command` — 接受 {type, args} 发起运行 (convene / capture / distill)
+ * 3. HTTP `/api/command` — 接受 {type, args} 发起运行 (convene / capture / distill / refine)
  *
  * 与 MCP server 彻底分离 (分工不同, 耦合会成噩梦)。
+ *
+ * Runtime: Node 20+ (用 ws npm 包做 WebSocket, 用 globalThis.Request/Response 做路由)。
+ *          v0.3 之前用 Bun.serve, 现在迁到 Node — npm install -g 就能跑, 不再需要 Bun。
  */
 
-import { serve, type ServerWebSocket } from "bun";
+import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import { WebSocketServer, WebSocket as NodeWebSocket } from "ws";
 import { existsSync, readFileSync, statSync } from "node:fs";
-import { join, resolve, extname } from "node:path";
+import { join, resolve, extname, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { bus, type CouncilEvent } from "../engine/events.ts";
 import { convene } from "../engine/convene.ts";
+import { captureCommand } from "../commands/capture.ts";
+import { refineCommand } from "../commands/refine.ts";
+import { distillAll, distillOne, readState } from "../engine/distill.ts";
+import {
+  listPersonas,
+  getSession,
+  getSkill,
+  listSkills,
+  listSessions,
+  listTranscripts,
+  getTranscript,
+  readIdentity,
+} from "../core/skill-md.ts";
+import { defaultAvatarFor, defaultColorFor } from "../engine/persona-visual.ts";
 import { isInitialized, paths } from "../core/paths.ts";
 import { loadDotEnv } from "../core/env.ts";
 
 loadDotEnv();
 
-const WEB_DIST = resolve(import.meta.dir, "..", "..", "web", "dist");
+// import.meta.dir 是 Bun 专有, Node 用 fileURLToPath 兼容
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const WEB_DIST = resolve(__dirname, "..", "..", "web", "dist");
 
 const MIME: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -41,18 +62,12 @@ const MIME: Record<string, string> = {
 // ──────────────────────────────────────────────────────────
 // WebSocket run → clients registry
 // ──────────────────────────────────────────────────────────
-const subscribers = new Map<string, Set<ServerWebSocketData>>();
-
-interface ServerWebSocketData {
+interface ClientEntry {
   runId: string;
-  ws: WebSocketLike;
+  ws: NodeWebSocket;
 }
 
-interface WebSocketLike {
-  send: (s: string) => void;
-  close: (code?: number, reason?: string) => void;
-  readyState: number;
-}
+const subscribers = new Map<string, Set<ClientEntry>>();
 
 // 事件总线 → 广播给对应 run 的所有 ws
 bus.subscribe((e: CouncilEvent) => {
@@ -61,7 +76,7 @@ bus.subscribe((e: CouncilEvent) => {
   const payload = JSON.stringify(e);
   for (const c of clients) {
     try {
-      c.ws.send(payload);
+      if (c.ws.readyState === NodeWebSocket.OPEN) c.ws.send(payload);
     } catch {
       /* ignore */
     }
@@ -79,7 +94,7 @@ interface CommandRequest {
 
 async function dispatchCommand(
   req: CommandRequest,
-): Promise<{ ok: boolean; run_id?: string; error?: string }> {
+): Promise<{ ok: boolean; run_id?: string; error?: string; result?: unknown }> {
   try {
     if (req.type === "convene") {
       const q = String(req.args.question ?? "").trim();
@@ -105,8 +120,6 @@ async function dispatchCommand(
       if (!body) return { ok: false, error: "body required" };
       const runId =
         (req.args.run_id as string | undefined) ?? newRunIdGeneric("capture");
-      const { captureCommand } = await import("../commands/capture.ts");
-      // 异步跑
       void captureCommand({ body, title, runId }).catch((err) => {
         console.error(`[live] capture failed: ${String(err)}`);
       });
@@ -117,7 +130,6 @@ async function dispatchCommand(
       const personaRef = req.args.persona_ref
         ? String(req.args.persona_ref)
         : undefined;
-      const { refineCommand } = await import("../commands/refine.ts");
       const result = await refineCommand(personaRef, {
         yes: true,
         silent: true,
@@ -126,7 +138,7 @@ async function dispatchCommand(
         ok: true,
         run_id: newRunIdGeneric("refine"),
         result,
-      } as { ok: true; run_id: string; result: unknown };
+      };
     }
 
     if (req.type === "distill") {
@@ -136,7 +148,6 @@ async function dispatchCommand(
       const auto = !!req.args.auto;
       const runId =
         (req.args.run_id as string | undefined) ?? newRunIdGeneric("distill");
-      const { distillAll, distillOne } = await import("../engine/distill.ts");
       if (sessionId) {
         void distillOne(sessionId, runId).catch((err) => {
           console.error(`[live] distill failed: ${String(err)}`);
@@ -171,7 +182,7 @@ function newSynthRunId(question: string): string {
   const slug =
     question
       .toLowerCase()
-      .replace(/[^\w\u4e00-\u9fa5-]+/g, "-")
+      .replace(/[^\w一-龥-]+/g, "-")
       .replace(/^-+|-+$/g, "")
       .slice(0, 30) || "question";
   const rand = Math.random().toString(36).slice(2, 8);
@@ -196,7 +207,7 @@ function serveStatic(pathname: string): Response | null {
     const mime = MIME[extname(full).toLowerCase()] ?? "application/octet-stream";
     try {
       const buf = readFileSync(full);
-      return new Response(buf, { headers: { "Content-Type": mime } });
+      return new Response(new Uint8Array(buf), { headers: { "Content-Type": mime } });
     } catch {
       return new Response("read error", { status: 500 });
     }
@@ -204,7 +215,7 @@ function serveStatic(pathname: string): Response | null {
   // 2. SPA fallback → index.html (client-side routing)
   const idx = join(WEB_DIST, "index.html");
   if (existsSync(idx)) {
-    return new Response(readFileSync(idx), {
+    return new Response(new Uint8Array(readFileSync(idx)), {
       headers: { "Content-Type": "text/html; charset=utf-8" },
     });
   }
@@ -230,13 +241,64 @@ const DEV_HINT_HTML = `<!doctype html>
 <p>WS 服务在线 <span class=muted>(port 3737)</span>, 但 web 构建产物还不存在。</p>
 <p>两条路:</p>
 <pre># 开发 (推荐): Vite dev server, HMR
-cd web &amp;&amp; bun install &amp;&amp; bun run dev
+cd web &amp;&amp; npm install &amp;&amp; npm run dev
 # 然后访问 http://localhost:5173</pre>
 <pre># 或者构建一次, 让本 server 接管
-cd web &amp;&amp; bun run build
+cd web &amp;&amp; npm run build
 # 然后刷新本页</pre>
 <p class=muted>WS 测试: <code>ws://localhost:3737/ws?run_id=&lt;id&gt;</code></p>
 </div></body></html>`;
+
+// ──────────────────────────────────────────────────────────
+// Node ↔ Web standard adapter
+// ──────────────────────────────────────────────────────────
+async function nodeReqToWebReq(req: IncomingMessage): Promise<Request> {
+  const host = req.headers.host ?? "127.0.0.1";
+  const url = new URL(req.url ?? "/", `http://${host}`);
+  const headers = new Headers();
+  for (const [k, v] of Object.entries(req.headers)) {
+    if (Array.isArray(v)) for (const vv of v) headers.append(k, vv);
+    else if (v !== undefined) headers.set(k, v);
+  }
+
+  const init: RequestInit = {
+    method: req.method ?? "GET",
+    headers,
+  };
+
+  // 只有需要 body 的方法才读取
+  if (req.method && !["GET", "HEAD"].includes(req.method.toUpperCase())) {
+    const chunks: Buffer[] = [];
+    for await (const chunk of req) {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    }
+    if (chunks.length > 0) {
+      init.body = Buffer.concat(chunks);
+      // Node 的 fetch Request 需要明确 duplex: 'half' (有 body 的情况下)
+      (init as RequestInit & { duplex?: string }).duplex = "half";
+    }
+  }
+
+  return new Request(url.toString(), init);
+}
+
+async function webResToNodeRes(webRes: Response, nodeRes: ServerResponse): Promise<void> {
+  // 复制 headers
+  const headers: Record<string, string> = {};
+  webRes.headers.forEach((v, k) => {
+    headers[k] = v;
+  });
+  nodeRes.writeHead(webRes.status, headers);
+
+  if (!webRes.body) {
+    nodeRes.end();
+    return;
+  }
+
+  // 把 web 标准 ReadableStream 写到 Node Response
+  const buf = Buffer.from(await webRes.arrayBuffer());
+  nodeRes.end(buf);
+}
 
 // ──────────────────────────────────────────────────────────
 // Server entry
@@ -246,10 +308,9 @@ export interface LiveServerOpts {
   host?: string;
 }
 
-interface WSData {
-  runId: string;
-}
-
+/**
+ * 启动 server, 返回类似 Bun.serve 的 handle ({port, stop()}) 让 convene.ts 能优雅停机。
+ */
 export function startLiveServer(opts: LiveServerOpts = {}) {
   const port = opts.port ?? Number(process.env.COUNCIL_LIVE_PORT ?? 3737);
   const host = opts.host ?? "127.0.0.1";
@@ -260,83 +321,138 @@ export function startLiveServer(opts: LiveServerOpts = {}) {
     );
   }
 
-  const server = serve<WSData>({
-    port,
-    hostname: host,
-    fetch(req, srv) {
-      const url = new URL(req.url);
+  // ── HTTP server ──
+  const httpServer = createServer(async (req, res) => {
+    try {
+      const webReq = await nodeReqToWebReq(req);
+      const url = new URL(webReq.url);
 
-      // WebSocket upgrade
+      // /ws 路径不在这里处理 — upgrade 事件接管
       if (url.pathname === "/ws") {
-        const runId = url.searchParams.get("run_id");
-        if (!runId) return new Response("run_id required", { status: 400 });
-        const success = srv.upgrade(req, { data: { runId } satisfies WSData });
-        if (success) return undefined; // upgrade handled
-        return new Response("WebSocket upgrade failed", { status: 400 });
+        res.writeHead(400, { "Content-Type": "text/plain" });
+        res.end("WebSocket endpoint — use ws:// scheme");
+        return;
       }
 
-      // API
+      // /api/* 路由
       if (url.pathname.startsWith("/api/")) {
-        return handleApi(req, url);
+        const apiRes = await handleApi(webReq, url);
+        await webResToNodeRes(apiRes, res);
+        return;
       }
 
-      // 静态
+      // 静态文件
       const served = serveStatic(url.pathname);
-      if (served) return served;
+      if (served) {
+        await webResToNodeRes(served, res);
+        return;
+      }
 
       // dev hint
-      return new Response(DEV_HINT_HTML, {
-        status: 200,
-        headers: { "Content-Type": "text/html; charset=utf-8" },
-      });
-    },
-
-    websocket: {
-      open(ws: ServerWebSocket<WSData>) {
-        const runId = ws.data.runId;
-        if (!subscribers.has(runId)) subscribers.set(runId, new Set());
-        const entry: ServerWebSocketData = {
-          runId,
-          ws: { send: (s) => ws.send(s), close: (c, r) => ws.close(c, r), readyState: 1 },
-        };
-        subscribers.get(runId)!.add(entry);
-        // 同时挂在 ws 上, 关闭时清理
-        (ws as any)._entry = entry;
-
-        // Replay 历史事件 (如果有)
-        const history = bus.replay(runId);
-        for (const e of history) {
-          ws.send(JSON.stringify(e));
-        }
-        // 告知客户端 replay 完毕
-        ws.send(
-          JSON.stringify({
-            t: "stream.ready",
-            run_id: runId,
-            history_count: history.length,
-            ts: Date.now(),
-          }),
-        );
-      },
-      message(_ws: ServerWebSocket<WSData>, _msg: string | Buffer) {
-        // 客户端不需要发消息, 全走 HTTP POST /api/command
-      },
-      close(ws: ServerWebSocket<WSData>) {
-        const entry = (ws as any)._entry as ServerWebSocketData | undefined;
-        if (!entry) return;
-        const set = subscribers.get(entry.runId);
-        if (set) {
-          set.delete(entry);
-          if (set.size === 0) subscribers.delete(entry.runId);
-        }
-      },
-    },
+      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+      res.end(DEV_HINT_HTML);
+    } catch (err) {
+      console.error(`[live] request failed: ${String(err)}`);
+      try {
+        res.writeHead(500, { "Content-Type": "text/plain" });
+        res.end("internal server error");
+      } catch {
+        /* connection already broken */
+      }
+    }
   });
+
+  // ── WebSocket server (复用 HTTP 的 upgrade 事件) ──
+  const wss = new WebSocketServer({ noServer: true });
+
+  httpServer.on("upgrade", (req, socket, head) => {
+    const url = new URL(req.url ?? "/", `http://${req.headers.host ?? host}`);
+    if (url.pathname !== "/ws") {
+      socket.destroy();
+      return;
+    }
+    const runId = url.searchParams.get("run_id");
+    if (!runId) {
+      socket.write("HTTP/1.1 400 Bad Request\r\n\r\nrun_id required");
+      socket.destroy();
+      return;
+    }
+    wss.handleUpgrade(req, socket, head, (ws) => {
+      attachClient(ws, runId);
+    });
+  });
+
+  function attachClient(ws: NodeWebSocket, runId: string) {
+    if (!subscribers.has(runId)) subscribers.set(runId, new Set());
+    const entry: ClientEntry = { runId, ws };
+    subscribers.get(runId)!.add(entry);
+
+    // Replay 历史事件
+    const history = bus.replay(runId);
+    for (const e of history) {
+      try {
+        ws.send(JSON.stringify(e));
+      } catch {
+        /* socket closed early */
+      }
+    }
+    // 告知客户端 replay 完毕
+    try {
+      ws.send(
+        JSON.stringify({
+          t: "stream.ready",
+          run_id: runId,
+          history_count: history.length,
+          ts: Date.now(),
+        }),
+      );
+    } catch {
+      /* ignore */
+    }
+
+    ws.on("close", () => {
+      const set = subscribers.get(runId);
+      if (set) {
+        set.delete(entry);
+        if (set.size === 0) subscribers.delete(runId);
+      }
+    });
+
+    ws.on("error", () => {
+      // 错误也算断开 — close 会跟着触发
+    });
+
+    // 客户端不需要发消息, 全走 HTTP POST /api/command
+    // 但有些 ws 客户端会发 ping, 不阻塞它
+  }
+
+  // ── Listen ──
+  httpServer.listen(port, host);
 
   console.error(`[live] Council Live listening on http://${host}:${port}`);
   console.error(`[live] WS:  ws://${host}:${port}/ws?run_id=<id>`);
-  console.error(`[live] Web: ${existsSync(WEB_DIST) ? WEB_DIST : "(not built — run `cd web && bun run build`)"}`);
-  return server;
+  console.error(`[live] Web: ${existsSync(WEB_DIST) ? WEB_DIST : "(not built — run `cd web && npm run build`)"}`);
+
+  // 模拟 Bun.serve 的返回 (port + stop())
+  return {
+    port,
+    hostname: host,
+    stop() {
+      // 关闭所有 ws 连接
+      for (const set of subscribers.values()) {
+        for (const entry of set) {
+          try {
+            entry.ws.close();
+          } catch {
+            /* ignore */
+          }
+        }
+      }
+      subscribers.clear();
+      wss.close();
+      httpServer.close();
+    },
+  };
 }
 
 // ──────────────────────────────────────────────────────────
@@ -369,10 +485,6 @@ async function handleApi(req: Request, url: URL): Promise<Response> {
 
   // GET /api/personas — 列出当前可用 persona (给 web 端选人 picker 用)
   if (url.pathname === "/api/personas" && req.method === "GET") {
-    const { listPersonas } = await import("../core/skill-md.ts");
-    const { defaultAvatarFor, defaultColorFor } = await import(
-      "../engine/persona-visual.ts"
-    );
     const rows = listPersonas().map((p) => ({
       ref: p.ref,
       type: p.frontmatter.type,
@@ -387,8 +499,6 @@ async function handleApi(req: Request, url: URL): Promise<Response> {
 
   // GET /api/sessions — 列出所有 capture 过的 session (按时间倒序)
   if (url.pathname === "/api/sessions" && req.method === "GET") {
-    const { listSessions } = await import("../core/skill-md.ts");
-    const { readState } = await import("../engine/distill.ts");
     const sessions = listSessions();
     const state = readState();
     const rows = sessions.map((s) => {
@@ -410,8 +520,6 @@ async function handleApi(req: Request, url: URL): Promise<Response> {
   const sessionMatch = url.pathname.match(/^\/api\/sessions\/([^/]+)$/);
   if (sessionMatch && req.method === "GET") {
     const id = decodeURIComponent(sessionMatch[1]);
-    const { getSession, listSkills } = await import("../core/skill-md.ts");
-    const { readState } = await import("../engine/distill.ts");
     try {
       const s = getSession(id);
       const state = readState();
@@ -451,8 +559,6 @@ async function handleApi(req: Request, url: URL): Promise<Response> {
 
   // GET /api/skills — 列出所有 highlights, 可按 type 过滤
   if (url.pathname === "/api/skills" && req.method === "GET") {
-    const { listSkills } = await import("../core/skill-md.ts");
-    const { readState } = await import("../engine/distill.ts");
     const type = url.searchParams.get("type") ?? undefined;
     const all = listSkills();
     const filtered = type ? all.filter((s) => s.data.type === type) : all;
@@ -479,7 +585,6 @@ async function handleApi(req: Request, url: URL): Promise<Response> {
   const skillMatch = url.pathname.match(/^\/api\/skills\/([^/]+)$/);
   if (skillMatch && req.method === "GET") {
     const idOrSlug = decodeURIComponent(skillMatch[1]);
-    const { getSkill, listSkills } = await import("../core/skill-md.ts");
     let sk = getSkill(idOrSlug);
     if (!sk) {
       const all = listSkills();
@@ -491,7 +596,6 @@ async function handleApi(req: Request, url: URL): Promise<Response> {
 
   // GET /api/transcripts — 列出所有议会记录
   if (url.pathname === "/api/transcripts" && req.method === "GET") {
-    const { listTranscripts } = await import("../core/skill-md.ts");
     const rows = listTranscripts().map((t) => ({
       id: t.data.id,
       question: t.data.question,
@@ -505,7 +609,6 @@ async function handleApi(req: Request, url: URL): Promise<Response> {
   const transMatch = url.pathname.match(/^\/api\/transcripts\/([^/]+)$/);
   if (transMatch && req.method === "GET") {
     const id = decodeURIComponent(transMatch[1]);
-    const { getTranscript } = await import("../core/skill-md.ts");
     try {
       const t = getTranscript(id);
       return json({ ...t.data, body: t.body });
@@ -516,7 +619,6 @@ async function handleApi(req: Request, url: URL): Promise<Response> {
 
   // GET /api/identity — 用户身份摘要 (用于 web 顶部 "你是谁")
   if (url.pathname === "/api/identity" && req.method === "GET") {
-    const { readIdentity } = await import("../core/skill-md.ts");
     const raw = readIdentity().trim();
     const placeholderCount = (raw.match(/<[^<>]{3,80}>/g) ?? []).length;
     const isTemplate = !raw || placeholderCount >= 3;
@@ -539,8 +641,24 @@ function json(data: unknown, status = 200): Response {
 }
 
 // ──────────────────────────────────────────────────────────
-// CLI entry: `bun run src/server/live.ts`
+// CLI entry: `node dist/server/live.js` 或 `bun run src/server/live.ts`
 // ──────────────────────────────────────────────────────────
-if (import.meta.main) {
+// Bun 用 import.meta.main, Node 用 import.meta.url 跟 process.argv[1] 比较
+const isMain = (() => {
+  try {
+    if (typeof (import.meta as { main?: boolean }).main === "boolean") {
+      return (import.meta as { main?: boolean }).main === true;
+    }
+  } catch {
+    /* ignore */
+  }
+  try {
+    return import.meta.url === `file://${process.argv[1]}`;
+  } catch {
+    return false;
+  }
+})();
+
+if (isMain) {
   startLiveServer();
 }

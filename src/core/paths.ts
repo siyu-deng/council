@@ -34,9 +34,18 @@ export const paths = {
 
 export function repoRoot(): string {
   // Bun 提供 import.meta.dir, Node 没有——用 import.meta.url 兼容写法。
-  // 打包后 (dist/) 这个文件位置在 dist/, 所以 .. / .. 仍指向包根。
-  const here = dirname(fileURLToPath(import.meta.url));
-  return resolve(here, "..", "..");
+  // 源码模式: 此文件在 src/core/paths.ts → 上溯 2 级到 repo 根
+  // 打包模式: 此文件被 inline 进 dist/council.mjs → 上溯 1 级到 repo 根
+  // 所以不能用固定层数, 改成"向上找 package.json"。
+  let here = dirname(fileURLToPath(import.meta.url));
+  for (let i = 0; i < 5; i++) {
+    if (existsSync(join(here, "package.json"))) return here;
+    const parent = dirname(here);
+    if (parent === here) break; // hit root
+    here = parent;
+  }
+  // 找不到 package.json (极端情况) 退到用户家目录的 ~/.council 不至于完全报错
+  return process.cwd();
 }
 
 export const seedPaths = {

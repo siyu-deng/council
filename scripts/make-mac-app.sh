@@ -168,32 +168,45 @@ EOF
 #!/usr/bin/env bash
 set -e
 # 把所有输出重定向到日志文件 (用 exec 在脚本一开始就生效, 子进程自动继承)
-# 实测: 用 'cmd >log 2>&1 &' 这种 per-command 重定向 + & 背景化, 在 .app launchd 上下文里
-# 会让 Bun 出现 "Unexpected" silent error。用 exec 重定向就没问题。
 exec >/tmp/council.live.log 2>&1
 echo "=== Council.app launcher \$(date) ==="
 
 REPO="$REPO"
 PORT=\${COUNCIL_LIVE_PORT:-3737}
 
-# macOS 通过 launchd 启动 .app 时, ulimit -n 默认是 256, Bun 在 fd 紧张时表现古怪。
-# 提到 65536, 失败再降到 10240; 都失败也不致命。
+# macOS 通过 launchd 启动 .app 时, ulimit -n 默认是 256。提到 65536, 失败再降到 10240。
 ulimit -n 524288 2>/dev/null || ulimit -n 65536 2>/dev/null || ulimit -n 10240 2>/dev/null || true
 echo "ulimit -n: \$(ulimit -Sn)"
 
-# 1. 确保 bun 可用 (尝试 ~/.bun, /opt/homebrew, /usr/local 三个常见路径)
-BUN=""
-for cand in "\$HOME/.bun/bin/bun" "/opt/homebrew/bin/bun" "/usr/local/bin/bun"; do
-  if [[ -x "\$cand" ]]; then BUN="\$cand"; break; fi
+# 1. 选 runtime — v0.3 起优先用 Node + dist 包, 找不到再回落到源码 + Bun
+#    优先级: node + dist/council.mjs (零依赖部署) > bun + 源码 (开发模式)
+RUNTIME=""
+RUNCMD=""
+for nodecand in "/opt/homebrew/bin/node" "/usr/local/bin/node" "\$HOME/.nvm/versions/node/current/bin/node" "/usr/bin/node"; do
+  if [[ -x "\$nodecand" && -f "\$REPO/dist/council.mjs" ]]; then
+    RUNTIME="\$nodecand"
+    RUNCMD=("\$nodecand" "\$REPO/dist/council.mjs" "live")
+    break
+  fi
 done
-if [[ -z "\$BUN" ]]; then
-  BUN="\$(command -v bun 2>/dev/null || true)"
+if [[ -z "\$RUNTIME" ]]; then
+  for buncand in "\$HOME/.bun/bin/bun" "/opt/homebrew/bin/bun" "/usr/local/bin/bun"; do
+    if [[ -x "\$buncand" ]]; then
+      RUNTIME="\$buncand"
+      RUNCMD=("\$buncand" "run" "\$REPO/bin/council.ts" "live")
+      break
+    fi
+  done
 fi
-if [[ -z "\$BUN" ]]; then
-  osascript -e 'display alert "Bun 未安装" message "请先安装 Bun: https://bun.sh\\n然后重新打开 Council.app"'
-  exit 1
+if [[ -z "\$RUNTIME" ]]; then
+  RUNTIME="\$(command -v node 2>/dev/null || command -v bun 2>/dev/null || true)"
+  if [[ -z "\$RUNTIME" ]]; then
+    osascript -e 'display alert "Council 需要 Node 或 Bun" message "推荐: brew install node\\n或: https://bun.sh"'
+    exit 1
+  fi
 fi
-echo "bun: \$BUN"
+echo "runtime: \$RUNTIME"
+echo "command: \${RUNCMD[*]}"
 
 # 2. 如果端口被占 (server 已在跑) 直接开浏览器
 if nc -z 127.0.0.1 \$PORT 2>/dev/null; then
@@ -204,8 +217,8 @@ fi
 
 # 3. 否则启动 server, 等就绪, 再开浏览器
 cd "\$REPO"
-echo "starting bun..."
-"\$BUN" run src/server/live.ts &
+echo "starting server..."
+"\${RUNCMD[@]}" &
 SERVER_PID=\$!
 echo "server pid=\$SERVER_PID"
 

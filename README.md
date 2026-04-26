@@ -40,7 +40,7 @@ council export --mcp
 # 把打印出的配置贴进 claude_desktop_config.json / .cursor/mcp.json → 重启客户端
 ```
 
-> 唯一例外: `council live`（网页圆桌可视化）需要 Bun。详见下面"安装"章节。
+> v0.3 起全部命令(含 `council live` 网页圆桌)纯 Node 跑, 不再需要 Bun。
 
 ---
 
@@ -158,13 +158,13 @@ council convene "我该不该 X"
 
 **要求**: Node ≥ 20。Anthropic API key.
 
-> **关于 `council live` (网页圆桌直播)**: 这一个命令需要额外装 Bun runtime, 因为 live server 用了 `Bun.serve()` 提供低延迟 SSE。`brew install bun` 即可。**纯 CLI / MCP 用法不需要 Bun.**
+> v0.3 起 `council live` (网页圆桌直播) 也跑在 Node 上 (`node:http` + `ws`), 不再需要 Bun runtime。所有 npm 安装的用户开箱即用。
 
 ---
 
 ### 想从源码跑 / 贡献代码?
 
-见 [`CONTRIBUTING.md`](CONTRIBUTING.md). 源码级开发需要 Bun.
+见 [`CONTRIBUTING.md`](CONTRIBUTING.md). 源码级开发推荐 Bun (热重载 + TS 直跑), 但 Node 也能跑。
 
 ---
 
@@ -269,7 +269,7 @@ claude mcp add council -e ANTHROPIC_API_KEY=sk-ant-... -- npx -y @moyu-build/cou
 - ✅ **L1**: Web HTTP/WS server + Vite/React 圆桌页面 + `--watch`
 - ✅ **L2**: 网页 capture/distill 流程 (粘贴 → 蒸馏 → 直接召集)
 - ✅ **L3**: 链路 C 反哺 (refine + evolve) + 跨 LLM 验证 (Cursor / Claude Desktop)
-- 🔜 **L4**: 把 live server 从 Bun 迁到 Node 原生 http, 解除唯一的 Bun 依赖
+- ✅ **L4**: live server 从 Bun 迁到 Node 原生 http + ws — npm 用户零额外安装
 - 未来: 剪贴板监听自动 capture, 桌面端全局快捷键, Council 之间的互相借调
 
 完整架构见 [`docs/architecture/architecture.md`](./docs/architecture/architecture.md) · 演讲材料见 [`docs/`](./docs/) · 贡献请看 [`CONTRIBUTING.md`](./CONTRIBUTING.md).
