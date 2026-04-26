@@ -15,7 +15,16 @@
 
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { WebSocketServer, WebSocket as NodeWebSocket } from "ws";
-import { existsSync, readFileSync, statSync } from "node:fs";
+import {
+  existsSync,
+  readFileSync,
+  statSync,
+  watch as fsWatch,
+  openSync,
+  readSync,
+  closeSync,
+  type FSWatcher,
+} from "node:fs";
 import { join, resolve, extname } from "node:path";
 import { bus, type CouncilEvent } from "../engine/events.ts";
 import { convene } from "../engine/convene.ts";
@@ -70,8 +79,29 @@ interface ClientEntry {
 
 const subscribers = new Map<string, Set<ClientEntry>>();
 
+/** topic=runs 订阅者 — 收到全局通知 (assets.changed / run.discovered), 不订阅特定 run */
+const globalSubs = new Set<NodeWebSocket>();
+
+/**
+ * 每个 run 的 jsonl 文件 byte offset — 跟踪 fs.watch 已 tail 到哪里.
+ *
+ * 关键: in-process bus.emit 写完文件后, 立即把 offset 更新到当前 size,
+ * 这样下面的 fs.watch handler 触发时, tail 读到 0 byte 新内容, 自然不重复广播.
+ * 没有这步, server 内部 convene 的事件会被广播两次 (bus + fsWatch 各一次).
+ */
+const tailOffsets = new Map<string, number>();
+
 // 事件总线 → 广播给对应 run 的所有 ws
 bus.subscribe((e: CouncilEvent) => {
+  // 同步把 offset 推到当前文件 size — 防止下面的 fs.watch handler 重复读
+  // 这里写 file 是 sync 的 (events.ts 用 appendFileSync), 此时 size 已经包含本次 event
+  try {
+    const fp = join(paths.live(), `${e.run_id}.jsonl`);
+    if (existsSync(fp)) tailOffsets.set(e.run_id, statSync(fp).size);
+  } catch {
+    /* offset 更新失败也不阻塞广播 — 最坏情况是事件被 fs.watch 重发一次, 客户端可去重 */
+  }
+
   const clients = subscribers.get(e.run_id);
   if (!clients || clients.size === 0) return;
   const payload = JSON.stringify(e);
@@ -83,6 +113,192 @@ bus.subscribe((e: CouncilEvent) => {
     }
   }
 });
+
+// ──────────────────────────────────────────────────────────
+// 跨进程 events: fs.watch 把外部 (CLI / MCP) 进程写入的 jsonl 转成 WS 广播
+//
+// 痛点: bus 是模块单例, server 进程和 CLI 进程是两个独立 Node 进程.
+// CLI 跑 convene 时只通知自己进程的 sink, server 的 bus 完全不知情, 浏览器 WS 收不到事件.
+//
+// 解法: server 把"文件系统"当成跨进程总线. 所有进程 emit 都写到 ~/.council/live/<id>.jsonl,
+// server fs.watch 这个目录, 文件追加 → tail 新内容 → 广播给 WS 订阅者.
+// in-process 写入也会触发 fs.watch, 但 tailOffsets 已经被 bus.subscribe 推到 size,
+// fs.watch 触发时读到 0 byte 新内容, 自然不重复.
+// ──────────────────────────────────────────────────────────
+
+let liveWatcher: FSWatcher | null = null;
+const dataWatchers: FSWatcher[] = [];
+let assetsChangedTimer: ReturnType<typeof setTimeout> | null = null;
+
+/**
+ * 反抖动地通知 topic=runs 订阅者 "数据集变了, 请刷新列表".
+ *
+ * 反抖动: capture/distill/convene 一次会写多个文件 (md + jsonl 等),
+ * 短时间内会触发多次 fs.watch. 用 150ms timer 合并成一次 ws 推送.
+ */
+function scheduleAssetsChanged(): void {
+  if (assetsChangedTimer) return;
+  assetsChangedTimer = setTimeout(() => {
+    assetsChangedTimer = null;
+    if (globalSubs.size === 0) return;
+    const payload = JSON.stringify({ t: "assets.changed", ts: Date.now() });
+    for (const ws of globalSubs) {
+      try {
+        if (ws.readyState === NodeWebSocket.OPEN) ws.send(payload);
+      } catch {
+        /* ignore */
+      }
+    }
+  }, 150);
+}
+
+/** 读 jsonl 文件 [tailOffsets[runId], size) 这段, 解析成事件并广播. */
+function tailNewEvents(runId: string): void {
+  const fp = join(paths.live(), `${runId}.jsonl`);
+  if (!existsSync(fp)) return;
+
+  let stat;
+  try {
+    stat = statSync(fp);
+  } catch {
+    return;
+  }
+
+  const offset = tailOffsets.get(runId) ?? 0;
+  if (stat.size === offset) return; // 没新内容 (或是 in-process 自己写的, offset 已被推到 size)
+  if (stat.size < offset) {
+    // 极端情况: 文件被截断/重写. reset 并重读
+    tailOffsets.set(runId, 0);
+    return tailNewEvents(runId);
+  }
+
+  let fd;
+  try {
+    fd = openSync(fp, "r");
+  } catch {
+    return;
+  }
+  try {
+    const buf = Buffer.alloc(stat.size - offset);
+    readSync(fd, buf, 0, buf.length, offset);
+    tailOffsets.set(runId, stat.size);
+
+    const lines = buf.toString("utf-8").split("\n").filter(Boolean);
+    if (lines.length === 0) return;
+
+    const clients = subscribers.get(runId);
+    let isNewRun = false;
+
+    for (const line of lines) {
+      let e: CouncilEvent;
+      try {
+        e = JSON.parse(line) as CouncilEvent;
+      } catch {
+        continue; // 行写到一半 (jsonl 写入还没刷盘) — 下次再读
+      }
+      if (e.t === "run.started") isNewRun = true;
+
+      // 推给该 run 的订阅者 (浏览器主动订阅了 ?run_id=<id> 才有)
+      if (clients && clients.size > 0) {
+        const payload = JSON.stringify(e);
+        for (const c of clients) {
+          try {
+            if (c.ws.readyState === NodeWebSocket.OPEN) c.ws.send(payload);
+          } catch {
+            /* ignore */
+          }
+        }
+      }
+    }
+
+    // 新 run 出现 — 通知 topic=runs 全局订阅者 (浏览器可以选择切到这个 run 看动画)
+    if (isNewRun && globalSubs.size > 0) {
+      const meta = JSON.stringify({
+        t: "run.discovered",
+        run_id: runId,
+        ts: Date.now(),
+      });
+      for (const ws of globalSubs) {
+        try {
+          if (ws.readyState === NodeWebSocket.OPEN) ws.send(meta);
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+  } finally {
+    closeSync(fd);
+  }
+}
+
+/**
+ * 启动文件系统 watcher.
+ *
+ * Watch 两类目录:
+ * 1. ~/.council/live/ — 实时事件流, 增量 tail 转 WS broadcast (核心)
+ * 2. ~/.council/{transcripts,sessions,personas,skills}/ — 列表数据,
+ *    任何变化触发 assets.changed 让前端 reload 列表
+ *
+ * 注意: fs.watch 在 macOS 默认非 recursive — 我们只 watch 一级目录就够,
+ * convene/capture 不会创建子目录. 不加 recursive 也省得跨平台行为不一.
+ */
+function startWatchers(): void {
+  // (1) live/ — 跨进程事件流转发
+  const liveDir = paths.live();
+  if (existsSync(liveDir)) {
+    try {
+      liveWatcher = fsWatch(liveDir, (_eventType, filename) => {
+        if (!filename || !String(filename).endsWith(".jsonl")) return;
+        const runId = String(filename).replace(/\.jsonl$/, "");
+        tailNewEvents(runId);
+        // 任何 jsonl 变化也意味着列表可能变 — 触发列表刷新
+        scheduleAssetsChanged();
+      });
+    } catch (err) {
+      console.error(`[live] fs.watch live/ failed: ${String(err)}`);
+    }
+  }
+
+  // (2) 数据目录 — 列表变化通知
+  for (const dir of [
+    paths.transcripts(),
+    paths.sessions(),
+    paths.personas(),
+    paths.skills(),
+  ]) {
+    if (!existsSync(dir)) continue;
+    try {
+      const w = fsWatch(dir, (_eventType, filename) => {
+        if (!filename || !String(filename).endsWith(".md")) return;
+        scheduleAssetsChanged();
+      });
+      dataWatchers.push(w);
+    } catch (err) {
+      console.error(`[live] fs.watch ${dir} failed: ${String(err)}`);
+    }
+  }
+}
+
+function stopWatchers(): void {
+  try {
+    liveWatcher?.close();
+  } catch {
+    /* ignore */
+  }
+  liveWatcher = null;
+  for (const w of dataWatchers) {
+    try {
+      w.close();
+    } catch {
+      /* ignore */
+    }
+  }
+  dataWatchers.length = 0;
+  if (assetsChangedTimer) {
+    clearTimeout(assetsChangedTimer);
+    assetsChangedTimer = null;
+  }
+}
 
 // ──────────────────────────────────────────────────────────
 // 命令 dispatch (POST /api/command)
@@ -372,9 +588,19 @@ export function startLiveServer(opts: LiveServerOpts = {}) {
       socket.destroy();
       return;
     }
+    // 两种订阅模式:
+    //   ?run_id=<id>    — 订阅某次 run 的事件流 (旧路径)
+    //   ?topic=runs     — 全局通知 channel (assets.changed / run.discovered)
+    const topic = url.searchParams.get("topic");
+    if (topic === "runs") {
+      wss.handleUpgrade(req, socket, head, (ws) => {
+        attachGlobalClient(ws);
+      });
+      return;
+    }
     const runId = url.searchParams.get("run_id");
     if (!runId) {
-      socket.write("HTTP/1.1 400 Bad Request\r\n\r\nrun_id required");
+      socket.write("HTTP/1.1 400 Bad Request\r\n\r\nrun_id or topic required");
       socket.destroy();
       return;
     }
@@ -382,6 +608,18 @@ export function startLiveServer(opts: LiveServerOpts = {}) {
       attachClient(ws, runId);
     });
   });
+
+  function attachGlobalClient(ws: NodeWebSocket): void {
+    globalSubs.add(ws);
+    // 立即发一个 hello 让前端知道连上了 (非必须, 但对调试友好)
+    try {
+      ws.send(JSON.stringify({ t: "topic.ready", topic: "runs", ts: Date.now() }));
+    } catch {
+      /* ignore */
+    }
+    ws.on("close", () => globalSubs.delete(ws));
+    ws.on("error", () => globalSubs.delete(ws));
+  }
 
   function attachClient(ws: NodeWebSocket, runId: string) {
     if (!subscribers.has(runId)) subscribers.set(runId, new Set());
@@ -430,8 +668,12 @@ export function startLiveServer(opts: LiveServerOpts = {}) {
   // ── Listen ──
   httpServer.listen(port, host);
 
+  // 启动 fs watcher — 让 server 看到 CLI / MCP / 任何外部进程的活动
+  startWatchers();
+
   console.error(`[live] Council Live listening on http://${host}:${port}`);
-  console.error(`[live] WS:  ws://${host}:${port}/ws?run_id=<id>`);
+  console.error(`[live] WS:  ws://${host}:${port}/ws?run_id=<id>  (per-run events)`);
+  console.error(`[live] WS:  ws://${host}:${port}/ws?topic=runs  (global notifications)`);
   console.error(`[live] Web: ${existsSync(WEB_DIST) ? WEB_DIST : "(not built — run `cd web && npm run build`)"}`);
 
   // 模拟 Bun.serve 的返回 (port + stop())
@@ -439,6 +681,7 @@ export function startLiveServer(opts: LiveServerOpts = {}) {
     port,
     hostname: host,
     stop() {
+      stopWatchers();
       // 关闭所有 ws 连接
       for (const set of subscribers.values()) {
         for (const entry of set) {
@@ -450,6 +693,14 @@ export function startLiveServer(opts: LiveServerOpts = {}) {
         }
       }
       subscribers.clear();
+      for (const ws of globalSubs) {
+        try {
+          ws.close();
+        } catch {
+          /* ignore */
+        }
+      }
+      globalSubs.clear();
       wss.close();
       httpServer.close();
     },

@@ -15,9 +15,15 @@ interface Props {
   filter: FilterType;
   /** 点卡片打开内容查看器 (重温/改一改再问 这类操作都在 viewer 里, 卡片只做入口) */
   onOpenAsset?: (target: { kind: ViewerKind; id: string; question?: string }) => void;
+  /**
+   * 外部触发刷新 — 数字递增即触发重拉列表.
+   * 用途: server WS topic=runs 推 assets.changed 时, App.tsx 增这个数字,
+   * 让 AssetFeed 立刻看到 CLI / MCP 新写入的 transcript/session.
+   */
+  externalReloadTick?: number;
 }
 
-export function AssetFeed({ filter, onOpenAsset }: Props) {
+export function AssetFeed({ filter, onOpenAsset, externalReloadTick }: Props) {
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [transcripts, setTranscripts] = useState<TranscriptRow[]>([]);
   const [personas, setPersonas] = useState<PersonaRow[]>([]);
@@ -28,7 +34,7 @@ export function AssetFeed({ filter, onOpenAsset }: Props) {
 
   useEffect(() => {
     let cancel = false;
-    setLoading(true);
+    // 不在初次加载后再 setLoading(true) — 避免每次 reload 闪一下"加载中…"
     Promise.all([
       api.sessions().catch(() => []),
       api.transcripts().catch(() => []),
@@ -49,7 +55,19 @@ export function AssetFeed({ filter, onOpenAsset }: Props) {
     return () => {
       cancel = true;
     };
-  }, [reloadTick]);
+  }, [reloadTick, externalReloadTick]);
+
+  // 兜底: tab 切回前台时刷新一次. WS topic=runs 是首选路径,
+  // 但万一 WS 因网络抖断了, visibilitychange 保证用户从 CLI 切回浏览器看到最新数据.
+  useEffect(() => {
+    function onVis() {
+      if (document.visibilityState === "visible") {
+        setReloadTick((t) => t + 1);
+      }
+    }
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, []);
 
   // 归档完后重拉列表
   function reload() {

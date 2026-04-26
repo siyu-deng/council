@@ -52,7 +52,7 @@ function collectStream(gen: AsyncGenerator<string>): Promise<string> {
 const server = new McpServer(
   {
     name: "council",
-    version: "0.1.1",
+    version: "0.3.1",
   },
   {
     capabilities: { tools: {}, prompts: {} },
@@ -841,12 +841,25 @@ function extractFirstQuote(body: string): string | null {
   return null;
 }
 
-async function main(): Promise<void> {
+/**
+ * 启动 MCP server (stdio transport).
+ * 既可以直接当 entrypoint 跑 (`bun src/mcp/server.ts`),
+ * 也可以被 `council serve` 在进程内 import 调用 (npm 包路径).
+ */
+export async function startMcpServer(): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
 }
 
-main().catch((err) => {
-  process.stderr.write(`[council mcp] fatal: ${String(err)}\n`);
-  process.exit(1);
-});
+// 直接跑这个文件时, 自动启动 (兼容旧用法 `bun src/mcp/server.ts`)
+// 通过 import 进来 (council serve) 时不自动启, 由调用方决定时机
+const isDirectRun =
+  import.meta.url === `file://${process.argv[1]}` ||
+  process.argv[1]?.endsWith("/server.ts") ||
+  process.argv[1]?.endsWith("/server.mjs");
+if (isDirectRun) {
+  startMcpServer().catch((err) => {
+    process.stderr.write(`[council mcp] fatal: ${String(err)}\n`);
+    process.exit(1);
+  });
+}
