@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AssetFeed } from "./AssetFeed";
 import { TraceView } from "./TraceView";
@@ -131,6 +131,14 @@ export function ConsoleShell({
 
   // 资产查看器 (Cmd+K 选中后弹出)
   const [viewerTarget, setViewerTarget] = useState<ViewerTarget | null>(null);
+
+  // prefill 视觉反馈 — 给输入框一次"闪光" 动画 + toast 通知 (修复用户感知不到 prefill 生效)
+  const [inputFlash, setInputFlash] = useState(0);
+  function prefillWithFeedback(q: string, label = "已填到输入框") {
+    setDraft(q);
+    setInputFlash((n) => n + 1);
+    flash("ok", `✓ ${label} · 改完按 ⌘↩ 召集`);
+  }
 
   // 侧栏展开状态 — 首次默认展开, 之后 localStorage 记住
   const [expanded, setExpanded] = useState<boolean>(() => {
@@ -282,7 +290,7 @@ export function ConsoleShell({
       <AssetViewer
         target={viewerTarget}
         onClose={() => setViewerTarget(null)}
-        onPrefill={(q) => setDraft(q)}
+        onPrefill={(q) => prefillWithFeedback(q)}
       />
 
       {/* ═══════════ 全高 Sidebar ═══════════ */}
@@ -471,7 +479,7 @@ export function ConsoleShell({
                     filter={filter}
                     onConvene={onConvene}
                     onReplay={onReplay}
-                    onPrefill={setDraft}
+                    onPrefill={(q) => prefillWithFeedback(q)}
                     onOpenAsset={(t) => setViewerTarget(t)}
                   />
                 </motion.div>
@@ -513,6 +521,7 @@ export function ConsoleShell({
                 onSubmit={submit}
                 disabled={isBusy || !!pendingCmd}
                 busyLabel={pendingCmd ?? null}
+                flashTick={inputFlash}
                 hint={
                   finished
                     ? "议会已结束 · 按 ESC 或点击侧栏返回 · 或问下一个问题"
@@ -733,6 +742,7 @@ function ActiveInputBar({
   disabled,
   busyLabel,
   hint,
+  flashTick,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -740,7 +750,26 @@ function ActiveInputBar({
   disabled: boolean;
   busyLabel: string | null;
   hint?: string;
+  /** 每次自增触发输入框 focus + 闪光动画 (用于"已 prefill 反馈") */
+  flashTick?: number;
 }) {
+  const taRef = useRef<HTMLTextAreaElement>(null);
+  const [isFlashing, setIsFlashing] = useState(false);
+
+  // —— flashTick 自增 → focus + 高亮闪一下 ——
+  useEffect(() => {
+    if (!flashTick) return;
+    taRef.current?.focus();
+    // 把光标放到末尾
+    const ta = taRef.current;
+    if (ta) {
+      ta.setSelectionRange(ta.value.length, ta.value.length);
+    }
+    setIsFlashing(true);
+    const t = setTimeout(() => setIsFlashing(false), 1100);
+    return () => clearTimeout(t);
+  }, [flashTick]);
+
   const isCapture = value.trimStart().startsWith("/capture");
   const isRefine = value.trimStart().startsWith("/refine");
   const verb = isCapture ? "capture" : isRefine ? "refine" : "convene";
@@ -750,18 +779,144 @@ function ActiveInputBar({
     refine: "⌘↩  深化 self persona",
   };
 
+  // —— 斜杠命令 picker — 输入 / 时显示, 选择后插入命令 ——
+  // 触发条件: 当前 value 整段就是 "/" 或 以 "/" 开头但还没匹配到完整 /capture / /refine
+  const trimmed = value.trimStart();
+  const showSlashPicker =
+    trimmed === "/" ||
+    (trimmed.startsWith("/") &&
+      !trimmed.startsWith("/capture") &&
+      !trimmed.startsWith("/refine") &&
+      !trimmed.includes(" "));
+  const [slashIdx, setSlashIdx] = useState(0);
+
+  const slashCommands = [
+    {
+      key: "capture",
+      label: "/capture",
+      desc: "捕获一段文本作为 session (并自动蒸馏高光)",
+      template: "/capture ",
+    },
+    {
+      key: "refine",
+      label: "/refine",
+      desc: "深化已有 self persona (LLM 用最新对话补强)",
+      template: "/refine ",
+    },
+  ];
+  // 按当前输入过滤
+  const filteredSlash = slashCommands.filter((c) =>
+    c.label.startsWith(trimmed),
+  );
+  function pickSlash(i: number) {
+    const cmd = filteredSlash[i];
+    if (!cmd) return;
+    onChange(cmd.template);
+    setSlashIdx(0);
+    // focus 留在 textarea, 光标到末尾
+    setTimeout(() => {
+      taRef.current?.focus();
+      const ta = taRef.current;
+      if (ta) ta.setSelectionRange(ta.value.length, ta.value.length);
+    }, 0);
+  }
+  // 重置 slashIdx 当 value 变化超出 picker 范围
+  useEffect(() => {
+    if (showSlashPicker) setSlashIdx(0);
+  }, [showSlashPicker]);
+
   return (
-    <div className="rounded-2xl border border-amber-dim/30 bg-ink-soft/60 px-4 py-3 transition-colors focus-within:border-amber-dim/60 focus-within:bg-ink-soft/80">
+    <div
+      className={`relative rounded-2xl border bg-ink-soft/60 px-4 py-3 transition-all focus-within:border-amber-dim/60 focus-within:bg-ink-soft/80 ${
+        isFlashing
+          ? "border-amber-glow/70 shadow-[0_0_24px_rgba(232,181,99,0.45)]"
+          : "border-amber-dim/30"
+      }`}
+    >
+      {/* 斜杠命令 picker — 浮在输入框正上方 */}
+      <AnimatePresence>
+        {showSlashPicker && filteredSlash.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 6 }}
+            transition={{ duration: 0.12 }}
+            className="absolute -top-2 left-0 right-0 z-20 mx-auto -translate-y-full overflow-hidden rounded-xl border border-amber-dim/40 bg-ink-deep/95 shadow-[0_8px_28px_rgba(0,0,0,0.5)] backdrop-blur"
+          >
+            <div className="border-b border-amber-dim/15 px-3 py-1.5 text-[10px] tracking-[0.18em] text-parchment/35">
+              斜杠命令
+            </div>
+            {filteredSlash.map((c, i) => {
+              const active = i === slashIdx;
+              return (
+                <button
+                  key={c.key}
+                  type="button"
+                  onMouseEnter={() => setSlashIdx(i)}
+                  onClick={() => pickSlash(i)}
+                  className={`flex w-full items-center gap-3 px-3 py-2 text-left transition-colors ${
+                    active
+                      ? "bg-amber-dim/[0.12] text-amber-glow"
+                      : "text-parchment/80 hover:bg-amber-dim/[0.06]"
+                  }`}
+                >
+                  <span className="font-mono text-[13px]">{c.label}</span>
+                  <span
+                    className={`flex-1 truncate text-[11px] ${
+                      active ? "text-amber-glow/70" : "text-parchment/40"
+                    }`}
+                  >
+                    {c.desc}
+                  </span>
+                  {active && (
+                    <kbd className="rounded border border-amber-glow/40 bg-amber-dim/[0.2] px-1.5 py-0.5 text-[9px] tracking-wider text-amber-glow/85">
+                      ↹/↵
+                    </kbd>
+                  )}
+                </button>
+              );
+            })}
+            <div className="border-t border-amber-dim/15 px-3 py-1 text-[9px] tracking-wider text-parchment/30">
+              ↑↓ 选 · ↹ Tab 或 ↵ Enter 插入 · Esc 关
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <textarea
+        ref={taRef}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={(e) => {
+          // 斜杠 picker 优先处理键盘
+          if (showSlashPicker && filteredSlash.length > 0) {
+            if (e.key === "ArrowDown") {
+              e.preventDefault();
+              setSlashIdx((i) => Math.min(i + 1, filteredSlash.length - 1));
+              return;
+            }
+            if (e.key === "ArrowUp") {
+              e.preventDefault();
+              setSlashIdx((i) => Math.max(i - 1, 0));
+              return;
+            }
+            if (e.key === "Tab" || (e.key === "Enter" && !e.metaKey && !e.ctrlKey)) {
+              e.preventDefault();
+              pickSlash(slashIdx);
+              return;
+            }
+            if (e.key === "Escape") {
+              e.preventDefault();
+              onChange("");
+              return;
+            }
+          }
           if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
             e.preventDefault();
             onSubmit();
           }
         }}
-        placeholder={hint ?? "你面前有什么决定?  /capture <文本>  /refine [persona]  亦可"}
+        placeholder={hint ?? "你面前有什么决定?  输入 / 看命令"}
         rows={2}
         className="w-full resize-none bg-transparent font-serif text-[15px] italic leading-relaxed text-parchment/90 placeholder:font-sans placeholder:not-italic placeholder:text-parchment/30 focus:outline-none"
       />
