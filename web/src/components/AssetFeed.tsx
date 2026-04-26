@@ -13,16 +13,11 @@ type ViewerKind = "transcript" | "session" | "skill" | "persona";
 
 interface Props {
   filter: FilterType;
-  onConvene?: (q: string) => void;
-  /** 静态重放某次议会的事件流 (零 LLM, 用于"重温") */
-  onReplay?: (runId: string, fallbackQuestion?: string) => void;
-  /** 把问题塞回输入框, 让用户改后再召集 (UX 改进: 不一键直接 convene) */
-  onPrefill?: (q: string) => void;
-  /** 点卡片打开内容查看器 */
+  /** 点卡片打开内容查看器 (重温/改一改再问 这类操作都在 viewer 里, 卡片只做入口) */
   onOpenAsset?: (target: { kind: ViewerKind; id: string; question?: string }) => void;
 }
 
-export function AssetFeed({ filter, onConvene, onReplay, onPrefill, onOpenAsset }: Props) {
+export function AssetFeed({ filter, onOpenAsset }: Props) {
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [transcripts, setTranscripts] = useState<TranscriptRow[]>([]);
   const [personas, setPersonas] = useState<PersonaRow[]>([]);
@@ -145,9 +140,6 @@ export function AssetFeed({ filter, onConvene, onReplay, onPrefill, onOpenAsset 
                   : (item.data as SkillRow).id
             }`}
             item={item}
-            onConvene={onConvene}
-            onReplay={onReplay}
-            onPrefill={onPrefill}
             onArchived={reload}
             onOpenAsset={onOpenAsset}
           />
@@ -159,16 +151,10 @@ export function AssetFeed({ filter, onConvene, onReplay, onPrefill, onOpenAsset 
 
 function FeedCard({
   item,
-  onConvene,
-  onReplay,
-  onPrefill,
   onArchived,
   onOpenAsset,
 }: {
   item: FeedItem;
-  onConvene?: (q: string) => void;
-  onReplay?: (runId: string, fallbackQuestion?: string) => void;
-  onPrefill?: (q: string) => void;
   onArchived?: () => void;
   onOpenAsset?: (target: { kind: ViewerKind; id: string; question?: string }) => void;
 }) {
@@ -258,49 +244,7 @@ function FeedCard({
             </span>
           ))}
         </div>
-        <div className="flex items-center gap-3 text-[11px] tracking-wider">
-          {/* 重温: 重读 JSONL 事件流, 零 LLM 成本, 重现当时辩论的视觉过程 */}
-          {onReplay && t.run_id && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onReplay(t.run_id!, t.question);
-              }}
-              className="text-amber-glow/65 transition-colors hover:text-amber-glow"
-              title="重新走一遍当时的议会 (动画式 · 不调 LLM · 零成本)"
-            >
-              ⟳ 重温
-            </button>
-          )}
-          {onPrefill && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onPrefill(t.question);
-              }}
-              className="text-parchment/45 transition-colors hover:text-amber-glow"
-              title="把问题填进输入框, 可改后再召集 (会调 LLM)"
-            >
-              ↻ 改一改再问
-            </button>
-          )}
-          {/* 没 run_id 的旧 transcript: 显示一个"重新召集 LLM" 退路, 但标明是会调 LLM */}
-          {!t.run_id && onConvene && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onConvene(t.question);
-              }}
-              className="text-parchment/35 transition-colors hover:text-orange-300"
-              title="该议会无事件流存档 (旧版生成), 只能重新调 LLM"
-            >
-              ⟳ 重新召集 (调 LLM)
-            </button>
-          )}
-        </div>
+        <CardHint label="查看议事录" />
       </div>
     );
   }
@@ -325,11 +269,12 @@ function FeedCard({
         <h3 className="mb-1 text-base text-parchment/85">
           {s.title || s.id}
         </h3>
-        <div className="text-[11px] text-parchment/40">
+        <div className="mb-3 text-[11px] text-parchment/40">
           {s.distilled
             ? `${s.highlight_count} 个高光蒸馏 · 来源 ${s.source}`
             : `未蒸馏 · 来源 ${s.source}`}
         </div>
+        <CardHint label="查看原文" />
       </div>
     );
   }
@@ -355,9 +300,10 @@ function FeedCard({
         <h3 className="mb-1 text-base font-medium text-parchment/85">
           {p.ref}
         </h3>
-        <div className="text-[12px] leading-relaxed text-parchment/55">
+        <div className="mb-3 text-[12px] leading-relaxed text-parchment/55">
           {p.description}
         </div>
+        <CardHint label="查看人格档案" />
       </div>
     );
   }
@@ -376,7 +322,7 @@ function FeedCard({
           </span>
         </div>
         <h3 className="mb-1 text-base text-parchment/85">{sk.title}</h3>
-        <div className="text-[11px] text-parchment/40">
+        <div className="mb-3 text-[11px] text-parchment/40">
           来源 {sk.source_session}
           {sk.promoted_to_persona && (
             <span className="ml-2 text-amber-glow/60">
@@ -384,11 +330,27 @@ function FeedCard({
             </span>
           )}
         </div>
+        <CardHint label="查看高光详情" />
       </div>
     );
   }
 
   return null;
+}
+
+/**
+ * 卡片底部的"点击进入详情"引导.
+ *
+ * 静态时就有 visible affordance (text-amber-glow/55), hover 时变亮 + 箭头位移.
+ * 这是为了让用户一眼就知道"卡片可以点", 不是装饰.
+ */
+function CardHint({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-1.5 border-t border-amber-dim/15 pt-2.5 text-[11px] tracking-wider text-amber-glow/55 transition-colors group-hover:text-amber-glow/95">
+      <span>{label}</span>
+      <span className="transition-transform duration-200 group-hover:translate-x-1">→</span>
+    </div>
+  );
 }
 
 function ChipTag({

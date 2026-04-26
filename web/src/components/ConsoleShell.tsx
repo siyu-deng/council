@@ -478,9 +478,6 @@ export function ConsoleShell({
                 >
                   <AssetFeed
                     filter={filter}
-                    onConvene={onConvene}
-                    onReplay={onReplay}
-                    onPrefill={(q) => prefillWithFeedback(q)}
                     onOpenAsset={(t) => setViewerTarget(t)}
                   />
                 </motion.div>
