@@ -8,9 +8,9 @@
 
 > Your thinking, round-tabled.
 >
-> ChatGPT 让 AI 认识全人类。**Council 让 AI 认识你。**
+> Evolver 让 Agent 自我进化。**Council 让人, 自我进化。**
 >
-> 不是让 AI 变成你, 是把你的思考外化成可召集的结构 — 然后通过 MCP 把这套结构暴露给任何 LLM 客户端 (Claude Desktop / Cursor / Cherry Studio)。
+> AI 在加速自我进化, 人这一条进化曲线还没人画。Council 是给"人"那一份 — 把你的思考外化成可召集的结构, 通过 MCP 暴露给任何 LLM 客户端 (Claude Desktop / Cursor / Cherry Studio)。
 
 **Author**: 墨宇 (Siyu Deng) · **License**: MIT · **Status**: EvoTavern Hackathon 2026
 **Stack**: Node 20+ · TypeScript · MCP Protocol · Anthropic Claude (Haiku 4.5) · Vite + React + Tailwind
@@ -46,17 +46,21 @@ council export --mcp
 
 ## 为什么要有 Council
 
-每个做"个人 AI"的产品, 都在回答同一个问题: **怎么让 AI 更像你?**
+每个做"个人 AI"的产品, 都在回答同一个问题: **怎么让 AI / Agent 自我进化、越来越像人?**
 
 Hermes 让 AI 和你一起成长。Second Me 训练你的数字分身。Evolver 给 Agent 装进化协议。花叔蒸馏思想家, 让你召唤他们进 Claude。
 
-Council 问了一个不一样的问题:
+**他们的主语都是 AI / Agent.**
 
-> **怎么让人的思考变得更结构化、更可被自己召集、更可辩论 — 让人继续做决策者, AI 只是让议会继续开着的基础设施?**
+Council 反问了一个不一样的问题:
 
-Hermes 让 AI 更像你。**Council 让你更像你。**
+> **AI 在加速自我进化, 人这一条曲线呢? 谁替你画?**
 
-这不是一个更好的 Agent。这不是 Agent。它是一种不同的**主语**。
+不是让 AI 替你思考。是让**你的思考**, 像 Agent 一样, 也能**自我进化** — 通过结构化、对抗性议会、跨 LLM 召唤。
+
+**Evolver 让 Agent 自我进化。Council 让人, 自我进化。**
+
+这不是一个更好的 Agent。这不是 Agent。它是一种不同的**主语** — 主语是人。
 
 ---
 
@@ -259,7 +263,7 @@ claude mcp add council -e ANTHROPIC_API_KEY=sk-ant-... -- npx -y @moyu-build/cou
 2. **协议高于产品** — 兼容 SKILL.md / MCP / AGENTS.md 三大标准。花叔的人物 skill 可以直接作为 mentor persona, Second Me 的模型可以作为 self persona 槽, Hermes/Evolver 蒸馏出的 skill 可以作为能力模块。**Council 不竞争, 是协同层**。
 3. **分歧是特性** — 永远同意你的议会是你不需要的议会。synthesis 必须标出"仍存分歧", 不允许和稀泥。
 4. **减法是纪律** — CLI + Markdown + MCP + 一页式 Web。没有 web UI dashboard, 没有账号, 没有训练, 十年后仍然成立。
-5. **主语是人** — 这不是功能差异, 是世界观差异。任何对手把 Council 的功能抄光, 只要他们仍以"让 AI 更像你"为目标, 他们就做不出 Council。
+5. **主语是人** — 这不是功能差异, 是世界观差异。任何对手把 Council 的功能抄光, 只要他们仍以"让 AI / Agent 自我进化"为目标, 他们就做不出 Council。
 
 ---
 
