@@ -9,14 +9,18 @@ interface FeedItem {
   data: SessionRow | TranscriptRow | PersonaRow | SkillRow;
 }
 
+type ViewerKind = "transcript" | "session" | "skill" | "persona";
+
 interface Props {
   filter: FilterType;
   onConvene?: (q: string) => void;
   /** 把问题塞回输入框, 让用户改后再召集 (UX 改进: 不一键直接 convene) */
   onPrefill?: (q: string) => void;
+  /** 点卡片打开内容查看器 */
+  onOpenAsset?: (target: { kind: ViewerKind; id: string; question?: string }) => void;
 }
 
-export function AssetFeed({ filter, onConvene, onPrefill }: Props) {
+export function AssetFeed({ filter, onConvene, onPrefill, onOpenAsset }: Props) {
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [transcripts, setTranscripts] = useState<TranscriptRow[]>([]);
   const [personas, setPersonas] = useState<PersonaRow[]>([]);
@@ -142,6 +146,7 @@ export function AssetFeed({ filter, onConvene, onPrefill }: Props) {
             onConvene={onConvene}
             onPrefill={onPrefill}
             onArchived={reload}
+            onOpenAsset={onOpenAsset}
           />
         ))}
       </div>
@@ -154,12 +159,32 @@ function FeedCard({
   onConvene,
   onPrefill,
   onArchived,
+  onOpenAsset,
 }: {
   item: FeedItem;
   onConvene?: (q: string) => void;
   onPrefill?: (q: string) => void;
   onArchived?: () => void;
+  onOpenAsset?: (target: { kind: ViewerKind; id: string; question?: string }) => void;
 }) {
+  // 卡片整体可点 → 打开 viewer (排除按钮和菜单)
+  function openViewer() {
+    if (!onOpenAsset) return;
+    if (item.kind === "transcript") {
+      const t = item.data as TranscriptRow;
+      onOpenAsset({ kind: "transcript", id: t.id, question: t.question });
+    } else if (item.kind === "session") {
+      const s = item.data as SessionRow;
+      onOpenAsset({ kind: "session", id: s.id });
+    } else if (item.kind === "persona") {
+      const p = item.data as PersonaRow;
+      onOpenAsset({ kind: "persona", id: p.ref });
+    } else if (item.kind === "skill") {
+      const sk = item.data as SkillRow;
+      onOpenAsset({ kind: "skill", id: sk.slug ?? sk.id });
+    }
+  }
+
   // 卡片右上角 … 菜单 (transcripts / sessions 才有)
   const menuActions = (() => {
     if (item.kind === "transcript") {
@@ -194,7 +219,10 @@ function FeedCard({
   if (item.kind === "transcript") {
     const t = item.data as TranscriptRow;
     return (
-      <div className="group relative overflow-hidden rounded-xl border border-amber-dim/20 bg-gradient-to-b from-ink-soft to-ink-deep p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-dim/50 hover:shadow-[0_4px_20px_rgba(0,0,0,0.4),0_0_0_1px_rgba(232,181,99,0.08)]">
+      <div
+        onClick={openViewer}
+        className="group relative cursor-pointer overflow-hidden rounded-xl border border-amber-dim/20 bg-gradient-to-b from-ink-soft to-ink-deep p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-dim/50 hover:shadow-[0_4px_20px_rgba(0,0,0,0.4),0_0_0_1px_rgba(232,181,99,0.08)]"
+      >
         {menuActions.length > 0 && <CardMenu actions={menuActions} />}
         <div className="mb-2 flex items-center gap-3">
           <ChipTag label="CONVENE" tone="ember" />
@@ -229,7 +257,10 @@ function FeedCard({
           {onPrefill && (
             <button
               type="button"
-              onClick={() => onPrefill(t.question)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onPrefill(t.question);
+              }}
               className="text-amber-glow/60 transition-colors hover:text-amber-glow"
               title="把问题填进输入框 (可改后再召集)"
             >
@@ -239,7 +270,10 @@ function FeedCard({
           {onConvene && (
             <button
               type="button"
-              onClick={() => onConvene(t.question)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onConvene(t.question);
+              }}
               className="text-parchment/40 transition-colors hover:text-amber-glow"
               title="原样再召集一次"
             >
@@ -254,7 +288,10 @@ function FeedCard({
   if (item.kind === "session") {
     const s = item.data as SessionRow;
     return (
-      <div className="group relative overflow-hidden rounded-xl border border-amber-dim/20 bg-gradient-to-b from-ink-soft to-ink-deep p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-dim/50 hover:shadow-[0_4px_20px_rgba(0,0,0,0.4),0_0_0_1px_rgba(232,181,99,0.08)]">
+      <div
+        onClick={openViewer}
+        className="group relative cursor-pointer overflow-hidden rounded-xl border border-amber-dim/20 bg-gradient-to-b from-ink-soft to-ink-deep p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-dim/50 hover:shadow-[0_4px_20px_rgba(0,0,0,0.4),0_0_0_1px_rgba(232,181,99,0.08)]"
+      >
         {menuActions.length > 0 && <CardMenu actions={menuActions} />}
         <div className="mb-2 flex items-center gap-3">
           <ChipTag label="CAPTURE" tone="warm" />
@@ -280,7 +317,10 @@ function FeedCard({
   if (item.kind === "persona") {
     const p = item.data as PersonaRow;
     return (
-      <div className="group relative overflow-hidden rounded-xl border border-amber-dim/20 bg-gradient-to-b from-ink-soft to-ink-deep p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-dim/50 hover:shadow-[0_4px_20px_rgba(0,0,0,0.4),0_0_0_1px_rgba(232,181,99,0.08)]">
+      <div
+        onClick={openViewer}
+        className="group relative cursor-pointer overflow-hidden rounded-xl border border-amber-dim/20 bg-gradient-to-b from-ink-soft to-ink-deep p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-dim/50 hover:shadow-[0_4px_20px_rgba(0,0,0,0.4),0_0_0_1px_rgba(232,181,99,0.08)]"
+      >
         <div className="mb-2 flex items-center gap-3">
           <ChipTag
             label={p.type.toUpperCase()}
@@ -305,7 +345,10 @@ function FeedCard({
   if (item.kind === "skill") {
     const sk = item.data as SkillRow;
     return (
-      <div className="group relative overflow-hidden rounded-xl border border-amber-dim/20 bg-gradient-to-b from-ink-soft to-ink-deep p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-dim/50 hover:shadow-[0_4px_20px_rgba(0,0,0,0.4),0_0_0_1px_rgba(232,181,99,0.08)]">
+      <div
+        onClick={openViewer}
+        className="group relative cursor-pointer overflow-hidden rounded-xl border border-amber-dim/20 bg-gradient-to-b from-ink-soft to-ink-deep p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-dim/50 hover:shadow-[0_4px_20px_rgba(0,0,0,0.4),0_0_0_1px_rgba(232,181,99,0.08)]"
+      >
         <div className="mb-2 flex items-center gap-3">
           <ChipTag label={sk.type.toUpperCase().replace(/-/g, " ")} tone="dim" />
           <span className="text-[10px] tracking-wider text-parchment/30">

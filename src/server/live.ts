@@ -498,6 +498,28 @@ async function handleApi(req: Request, url: URL): Promise<Response> {
     return json({ personas: rows });
   }
 
+  // GET /api/personas/:ref — 单个 persona 的 SKILL.md body
+  // ref 是 "self:xxx" / "mentors:xxx" / "roles:xxx" 这种带冒号的, URL 里要 encode
+  const personaDetailMatch = url.pathname.match(/^\/api\/personas\/(.+)$/);
+  if (personaDetailMatch && req.method === "GET") {
+    const ref = decodeURIComponent(personaDetailMatch[1]);
+    const all = listPersonas();
+    const p = all.find((x) => x.ref === ref);
+    if (!p) return json({ error: "not found" }, 404);
+    return json({
+      ref: p.ref,
+      type: p.frontmatter.type,
+      description: p.frontmatter.description,
+      confidence: p.frontmatter.confidence,
+      avatar: p.frontmatter.avatar ?? defaultAvatarFor(p),
+      color: p.frontmatter.color ?? defaultColorFor(p),
+      body: p.body,
+      source_sessions: p.frontmatter.source_sessions,
+      version: p.frontmatter.version,
+      origin: p.frontmatter.origin,
+    });
+  }
+
   // GET /api/sessions — 列出所有 capture 过的 session (按时间倒序)
   if (url.pathname === "/api/sessions" && req.method === "GET") {
     const sessions = listSessions();

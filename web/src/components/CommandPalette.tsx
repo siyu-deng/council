@@ -13,6 +13,7 @@ import {
   type SkillRow,
   type PersonaRow,
 } from "@/lib/api";
+import type { ViewerTarget } from "./AssetViewer";
 
 interface Hit {
   kind: "transcript" | "session" | "persona" | "skill";
@@ -34,13 +35,13 @@ interface IndexData {
 }
 
 interface Props {
-  /** 当用户选中一项需要预填到输入框时 (用于 transcripts: 把问题塞回输入) */
-  onPrefill?: (q: string) => void;
+  /** 用户选中一项 → 打开内嵌 viewer 看内容 */
+  onOpenAsset: (target: ViewerTarget) => void;
   /** 当用户切换 view 时 (例如想跳到 capture 视图) */
   onModeChange?: (m: "council" | "capture") => void;
 }
 
-export function CommandPalette({ onPrefill }: Props) {
+export function CommandPalette({ onOpenAsset }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [index, setIndex] = useState<IndexData | null>(null);
@@ -110,6 +111,12 @@ export function CommandPalette({ onPrefill }: Props) {
       return 10;
     }
 
+    // 选中 → 关 cmd+k + 打开 viewer (统一行为, 不再 prefill / redirect)
+    function openWith(target: ViewerTarget) {
+      setOpen(false);
+      onOpenAsset(target);
+    }
+
     // —— transcripts ——
     for (const t of index.transcripts) {
       const haystack = `${t.question} ${t.personas.join(" ")}`;
@@ -122,12 +129,8 @@ export function CommandPalette({ onPrefill }: Props) {
           subtitle: `议会 · ${t.personas.length} 位 · ${fmt(t.convened_at)}`,
           ts: t.convened_at,
           score: s + recencyBoost(t.convened_at),
-          action: () => {
-            // 跳到 transcript: 用 ?run_id= 路由 (TranscriptViewer 可挂)
-            // 当前我们没有独立 viewer, 改成 prefill 让用户重开
-            onPrefill?.(t.question);
-            setOpen(false);
-          },
+          action: () =>
+            openWith({ kind: "transcript", id: t.id, question: t.question }),
         });
       }
     }
@@ -144,11 +147,7 @@ export function CommandPalette({ onPrefill }: Props) {
           subtitle: `对话 · ${s.distilled ? `${s.highlight_count} 高光` : "未蒸馏"} · ${fmt(s.captured_at)}`,
           ts: s.captured_at,
           score: sc + recencyBoost(s.captured_at),
-          action: () => {
-            // 暂时无独立 session viewer, 滚到 feed 顶部
-            window.location.assign(`/?focus=session-${encodeURIComponent(s.id)}`);
-            setOpen(false);
-          },
+          action: () => openWith({ kind: "session", id: s.id }),
         });
       }
     }
@@ -165,11 +164,7 @@ export function CommandPalette({ onPrefill }: Props) {
           subtitle:
             p.description ?? (p.type === "self" ? "你的思考人格" : p.type),
           score: sc,
-          action: () => {
-            // ⌘K 选 persona → 把 ref 塞进输入框作为 /refine 命令前奏
-            onPrefill?.(p.ref);
-            setOpen(false);
-          },
+          action: () => openWith({ kind: "persona", id: p.ref }),
         });
       }
     }
@@ -185,16 +180,14 @@ export function CommandPalette({ onPrefill }: Props) {
           title: sk.title,
           subtitle: `高光 · ${sk.type} · conf ${sk.confidence.toFixed(2)}${sk.promoted_to_persona ? ` → ${sk.promoted_to_persona}` : ""}`,
           score: sc,
-          action: () => {
-            window.location.assign(`/?focus=skill-${encodeURIComponent(sk.slug ?? sk.id)}`);
-            setOpen(false);
-          },
+          action: () =>
+            openWith({ kind: "skill", id: sk.slug ?? sk.id }),
         });
       }
     }
 
     return out.sort((a, b) => b.score - a.score).slice(0, 30);
-  }, [index, query, onPrefill]);
+  }, [index, query, onOpenAsset]);
 
   // —— 键盘 nav ——
   useEffect(() => {

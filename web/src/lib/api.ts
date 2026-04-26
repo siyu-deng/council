@@ -90,6 +90,15 @@ export const api = {
 
   personas: () =>
     getJSON<{ personas: PersonaRow[] }>("/api/personas").then((r) => r.personas),
+  persona: (ref: string) =>
+    getJSON<
+      PersonaRow & {
+        body: string;
+        source_sessions?: string[];
+        version?: number;
+        origin?: string;
+      }
+    >(`/api/personas/${encodeURIComponent(ref)}`),
 
   identity: () => getJSON<IdentityResponse>("/api/identity"),
 

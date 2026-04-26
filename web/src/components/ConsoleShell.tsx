@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { AssetFeed } from "./AssetFeed";
 import { TraceView } from "./TraceView";
 import { CommandPalette } from "./CommandPalette";
+import { AssetViewer, type ViewerTarget } from "./AssetViewer";
 import { useCouncil } from "@/lib/store";
 import { api } from "@/lib/api";
 import { useTheme } from "@/lib/theme";
@@ -124,6 +125,9 @@ export function ConsoleShell({
   const [draft, setDraft] = useState(prefillQuestion ?? "");
   const [toast, setToast] = useState<{ tone: "ok" | "warn" | "err"; text: string } | null>(null);
   const [pendingCmd, setPendingCmd] = useState<string | null>(null);
+
+  // 资产查看器 (Cmd+K 选中后弹出)
+  const [viewerTarget, setViewerTarget] = useState<ViewerTarget | null>(null);
 
   // 侧栏展开状态 — 首次默认展开, 之后 localStorage 记住
   const [expanded, setExpanded] = useState<boolean>(() => {
@@ -267,8 +271,15 @@ export function ConsoleShell({
     <div className="flex h-full w-full">
       {/* ═══════════ Cmd+K 全局检索 ═══════════ */}
       <CommandPalette
-        onPrefill={(text) => setDraft(text)}
+        onOpenAsset={(t) => setViewerTarget(t)}
         onModeChange={onModeChange}
+      />
+
+      {/* ═══════════ 资产查看器 (transcript / session / skill / persona) ═══════════ */}
+      <AssetViewer
+        target={viewerTarget}
+        onClose={() => setViewerTarget(null)}
+        onPrefill={(q) => setDraft(q)}
       />
 
       {/* ═══════════ 全高 Sidebar ═══════════ */}
@@ -453,7 +464,12 @@ export function ConsoleShell({
                   transition={{ duration: 0.18 }}
                   className="absolute inset-0"
                 >
-                  <AssetFeed filter={filter} onConvene={onConvene} onPrefill={setDraft} />
+                  <AssetFeed
+                    filter={filter}
+                    onConvene={onConvene}
+                    onPrefill={setDraft}
+                    onOpenAsset={(t) => setViewerTarget(t)}
+                  />
                 </motion.div>
               )}
             </AnimatePresence>
