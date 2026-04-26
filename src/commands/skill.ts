@@ -10,7 +10,7 @@ export async function skillListCommand(opts: { type?: string } = {}): Promise<vo
   const filtered = opts.type ? all.filter((s) => s.data.type === opts.type) : all;
 
   if (filtered.length === 0) {
-    log.dim(opts.type ? `没有 type=${opts.type} 的 skill` : "尚无 skill");
+    log.muted(opts.type ? `没有 type=${opts.type} 的 skill` : "尚无 skill");
     return;
   }
 
