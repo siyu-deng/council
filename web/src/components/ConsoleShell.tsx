@@ -14,7 +14,7 @@ type AppMode = "council" | "capture";
 interface Props {
   prefillQuestion: string;
   onConvene: (q: string) => void;
-  /** "原样重开": 静态重放某次 run 的事件流 (零 LLM 成本) */
+  /** "重温": 静态重放某次 run 的事件流 (零 LLM 成本) */
   onReplay?: (runId: string, fallbackQuestion?: string) => void;
   isBusy: boolean;
   /** 当前主视图 (议会 / 捕获) */
@@ -291,6 +291,7 @@ export function ConsoleShell({
         target={viewerTarget}
         onClose={() => setViewerTarget(null)}
         onPrefill={(q) => prefillWithFeedback(q)}
+        onReplay={onReplay}
       />
 
       {/* ═══════════ 全高 Sidebar ═══════════ */}

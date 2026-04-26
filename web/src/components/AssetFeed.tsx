@@ -14,7 +14,7 @@ type ViewerKind = "transcript" | "session" | "skill" | "persona";
 interface Props {
   filter: FilterType;
   onConvene?: (q: string) => void;
-  /** 静态重放某次议会的事件流 (零 LLM, 用于"原样重开") */
+  /** 静态重放某次议会的事件流 (零 LLM, 用于"重温") */
   onReplay?: (runId: string, fallbackQuestion?: string) => void;
   /** 把问题塞回输入框, 让用户改后再召集 (UX 改进: 不一键直接 convene) */
   onPrefill?: (q: string) => void;
@@ -259,7 +259,7 @@ function FeedCard({
           ))}
         </div>
         <div className="flex items-center gap-3 text-[11px] tracking-wider">
-          {/* 原样重放: 重读 JSONL 事件流, 零 LLM 成本, 重现当时辩论的视觉过程 */}
+          {/* 重温: 重读 JSONL 事件流, 零 LLM 成本, 重现当时辩论的视觉过程 */}
           {onReplay && t.run_id && (
             <button
               type="button"
@@ -268,9 +268,9 @@ function FeedCard({
                 onReplay(t.run_id!, t.question);
               }}
               className="text-amber-glow/65 transition-colors hover:text-amber-glow"
-              title="重放当时的事件流 (动画式 · 不调 LLM · 零成本)"
+              title="重新走一遍当时的议会 (动画式 · 不调 LLM · 零成本)"
             >
-              ⟳ 原样重放
+              ⟳ 重温
             </button>
           )}
           {onPrefill && (

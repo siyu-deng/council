@@ -21,17 +21,21 @@ interface Props {
   onClose: () => void;
   /** 关闭后用户希望把 query 塞进输入框 (例如重新召集 transcript 的问题) */
   onPrefill?: (q: string) => void;
+  /** "重温": 静态重放某次议会的事件流 (零 LLM 成本) */
+  onReplay?: (runId: string, fallbackQuestion?: string) => void;
 }
 
 interface Loaded {
   title: string;
   meta: string;
   body: string;
-  /** 用于"再召集"按钮 */
+  /** 用于"改一改再问"按钮 */
   question?: string;
+  /** 用于"重温"按钮 — 静态重放 JSONL 事件流 */
+  run_id?: string;
 }
 
-export function AssetViewer({ target, onClose, onPrefill }: Props) {
+export function AssetViewer({ target, onClose, onPrefill, onReplay }: Props) {
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -67,6 +71,7 @@ export function AssetViewer({ target, onClose, onPrefill }: Props) {
             meta: `议会 · ${t.personas.join(" · ")} · ${fmt(t.convened_at)}`,
             body: t.body,
             question: t.question,
+            run_id: t.run_id,
           });
         } else if (target.kind === "session") {
           const s = await api.session(target.id);
@@ -189,19 +194,31 @@ export function AssetViewer({ target, onClose, onPrefill }: Props) {
                 关闭
               </div>
               <div className="flex items-center gap-2">
+                {/* 重温 — 零 LLM 成本静态重放议会, 比"改一改再问"更先放是因为它更便宜 */}
+                {target.kind === "transcript" && loaded?.run_id && onReplay && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onReplay(loaded.run_id!, loaded.question);
+                      onClose();
+                    }}
+                    className="rounded-md border border-amber-dim/40 bg-amber-dim/[0.1] px-3 py-1.5 text-[12px] text-amber-glow transition-colors hover:bg-amber-dim/[0.2]"
+                    title="零 LLM 成本 · 重新走一遍这场议会"
+                  >
+                    ⟳ 重温
+                  </button>
+                )}
                 {target.kind === "transcript" && loaded?.question && onPrefill && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (loaded.question) onPrefill(loaded.question);
-                        onClose();
-                      }}
-                      className="rounded-md border border-amber-dim/40 bg-amber-dim/[0.1] px-3 py-1.5 text-[12px] text-amber-glow transition-colors hover:bg-amber-dim/[0.2]"
-                    >
-                      改一改再问
-                    </button>
-                  </>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (loaded.question) onPrefill(loaded.question);
+                      onClose();
+                    }}
+                    className="rounded-md border border-amber-dim/40 bg-amber-dim/[0.1] px-3 py-1.5 text-[12px] text-amber-glow transition-colors hover:bg-amber-dim/[0.2]"
+                  >
+                    改一改再问
+                  </button>
                 )}
                 {target.kind === "persona" && onPrefill && (
                   <button
