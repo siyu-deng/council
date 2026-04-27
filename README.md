@@ -6,16 +6,41 @@
 [![MCP](https://img.shields.io/badge/MCP-server-amber.svg?color=B86D3A)](https://modelcontextprotocol.io)
 [![Node](https://img.shields.io/badge/node-≥20-green)](https://nodejs.org)
 
-> Your thinking, round-tabled.
+> Your personal thinking council for the AI era.
 >
-> Evolver 让 Agent 自我进化。**Council 让人, 自我进化。**
->
-> AI 在加速自我进化, 人这一条进化曲线还没人画。Council 是给"人"那一份 — 把你的思考外化成可召集的结构, 通过 MCP 暴露给任何 LLM 客户端 (Claude Desktop / Cursor / Cherry Studio)。
+> Council turns your real conversations into reusable self-personas, then lets you convene them with mentors and roles across CLI, Web, and MCP.
 
-**Author**: 墨宇 (Siyu Deng) · **License**: MIT · **Status**: EvoTavern Hackathon 2026
+**Author**: 墨宇 (Siyu Deng) · **License**: MIT · **Status**: EvoTavern Hackathon 2026  
 **Stack**: Node 20+ · TypeScript · MCP Protocol · Anthropic Claude (Haiku 4.5) · Vite + React + Tailwind
 
 ---
+
+## Hackathon Submission
+
+如果你是第一次来到这个项目, 建议先看路演材料, 再决定要不要深入代码。
+
+| Audience | Material | Format |
+|---|---|---|
+| 评委 / 导师 | [横屏路演 Deck](./相关材料/路演/横屏%2016-9%20比例/路演PPT.pdf) | PDF |
+| 评委 / 导师 | [横屏路演源文件](./相关材料/路演/横屏%2016-9%20比例/路演PPT.pptx) | PPTX |
+| 移动端浏览 | [竖屏路演 Deck](./相关材料/路演/竖屏%209-16比例/council-pitch.pdf) | PDF |
+| 移动端浏览 | [竖屏路演源文件](./相关材料/路演/竖屏%209-16比例/council-pitch.pptx) | PPTX |
+| 现场讲述 | [6 分钟 Pitch 稿](./docs/pitch.md) | Markdown |
+| 现场 Demo | [Demo Runbook](./docs/demo-runbook.md) | Markdown |
+| 叙事背景 | [Story Narrative](./docs/story.md) | Markdown |
+
+更多演讲材料、架构图和设计稿见 [docs/README.md](./docs/README.md)。
+
+## 什么是 Council
+
+Council 不是一个“替你思考”的 Agent, 而是一套把你的思考资产结构化、可复用、可召集的个人认知运行时。
+
+- `capture`: 把真实对话沉淀为可追踪的认知素材
+- `distill`: 从素材里蒸馏出属于你的 self personas
+- `convene`: 让 self、mentor、role 在一个议会里相互质疑并形成结论
+- `export --mcp`: 把这套能力暴露给 Claude Desktop、Cursor、Cherry Studio 等客户端
+
+一句话说: **Evolver 让 Agent 自我进化。Council 让人, 自我进化。**
 
 ## 5 分钟跑起来
 
@@ -203,16 +228,44 @@ council convene "我该不该 X"
 | `council_capture_this` | 把当前对话捕获并立即蒸馏 |
 | `council_bootstrap_identity` | 基于已有 self personas 反向回推 identity 草稿 |
 
+### LLM 调用模式 (v0.4 起两种自动选择)
+
+Council 在 MCP 模式下**会自动判断**该用哪种方式调 LLM:
+
+| 模式 | 何时启用 | 特征 |
+|------|---------|------|
+| **BYOK** (Anthropic API) | 配了 `ANTHROPIC_API_KEY` | ⚡ 流式 / 不弹窗 / 用你的 API 账单 |
+| **MCP Sampling** (借宿主) | 没配 Key, 客户端支持 sampling | 🆓 用客户端订阅 / 不流式 / 客户端可能弹窗 approve |
+
+> **说人话**: 如果你已经在 Claude Desktop / Claude Code 里付了订阅, **不用再配 API Key**——Council 会自动反向请求宿主跑 LLM. 在 Cursor 等部分支持的客户端也能用. **CLI 和 `council live` (本地浏览器) 仍然必须 BYOK**, 因为它们没有"宿主"可借.
+>
+> **取舍**: Sampling 不流式 (议会失去逐字现场感), 部分客户端会每次弹 approve. 重度使用建议配 Key 走 BYOK 模式, 体验更顺.
+
 ### 接入 MCP 客户端
 
-**Claude Code (一行命令)**:
+**Claude Code (零配置, 借用客户端 LLM)**:
 
 ```bash
-claude mcp add council -e ANTHROPIC_API_KEY=sk-ant-... -- npx -y @moyu-build/council@latest serve
+claude mcp add council -- npx -y @moyu-build/council@latest serve
 ```
+
+> 不传 `-e ANTHROPIC_API_KEY` 时, Council 自动用 Sampling 模式借 Claude Code 的 LLM. 想走 BYOK (流式 + 不弹窗) 就加 `-e ANTHROPIC_API_KEY=sk-ant-...`.
 
 **Claude Desktop / Cursor / Cherry Studio (改 JSON 配置)**:
 
+零配置 (借宿主 LLM, 推荐):
+```json
+{
+  "mcpServers": {
+    "council": {
+      "command": "npx",
+      "args": ["-y", "@moyu-build/council@latest", "serve"]
+    }
+  }
+}
+```
+
+走 BYOK (体验更顺, 流式 + 不弹窗):
 ```json
 {
   "mcpServers": {
@@ -227,6 +280,7 @@ claude mcp add council -e ANTHROPIC_API_KEY=sk-ant-... -- npx -y @moyu-build/cou
 
 > 客户端首次启动会触发 `npx` 拉取最新版, 之后命中 npm 缓存秒启动。`@latest` 标签确保你跟主分支。
 > 数据落在 `~/.council/`, 跨客户端共享同一份身份档案。
+> 启动日志在 stderr (Claude Desktop 在 `~/Library/Logs/Claude/mcp.log`), 第一行会告诉你当前用的是 `anthropic-api` 还是 `mcp-sampling`.
 
 ---
 

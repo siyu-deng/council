@@ -1,6 +1,10 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
+import { setBackendResolver } from "../core/llm-backend.ts";
+import { SamplingBackend } from "../core/llm-sampling.ts";
+import { AnthropicBackend } from "../core/llm-anthropic.ts";
+import type { LLMBackend } from "../core/llm-backend.ts";
 
 // MCP stdio transport 要求 stdout 只承载 JSON-RPC。
 // 这个开关让 core/logger.ts 和 engine/render.ts 完全不写 stdout/stderr (也避免泄到调用方终端)。
@@ -52,7 +56,7 @@ function collectStream(gen: AsyncGenerator<string>): Promise<string> {
 const server = new McpServer(
   {
     name: "council",
-    version: "0.3.1",
+    version: "0.3.2",
   },
   {
     capabilities: { tools: {}, prompts: {} },
@@ -848,6 +852,53 @@ function extractFirstQuote(body: string): string | null {
  */
 export async function startMcpServer(): Promise<void> {
   const transport = new StdioServerTransport();
+
+  // ━━━ Backend 选路 (lazy) ━━━
+  // 注册一个 resolver, 第一次 LLM 调用时触发. 那时 initialize 早已完成,
+  // client capabilities 必然 ready. (实测 oninitialized 触发时 SDK 内部
+  // _clientCapabilities 仍可能 undefined, 反直觉但确实如此.)
+  //
+  // 三种情况:
+  //   1. 有 ANTHROPIC_API_KEY → AnthropicBackend (BYOK 优先, 流式 + 不弹窗)
+  //   2. 无 API Key + 客户端支持 sampling → SamplingBackend (借宿主 LLM)
+  //   3. 无 API Key + 客户端不支持 sampling → AnthropicBackend (会立刻抛
+  //      ApiKeyMissingError, 给用户明确提示)
+  let logged = false;
+  setBackendResolver((): LLMBackend => {
+    const hasApiKey = !!process.env.ANTHROPIC_API_KEY;
+    const clientCaps = server.server.getClientCapabilities();
+    const supportsSampling = !!clientCaps?.sampling;
+
+    let chosen: LLMBackend;
+    let modeDesc: string;
+
+    if (hasApiKey) {
+      chosen = AnthropicBackend;
+      modeDesc = "backend=anthropic-api (BYOK, ANTHROPIC_API_KEY 已配)";
+    } else if (supportsSampling) {
+      chosen = new SamplingBackend(server);
+      modeDesc =
+        "backend=mcp-sampling (借宿主客户端 LLM, 用户无需配 API Key)";
+    } else {
+      chosen = AnthropicBackend;
+      modeDesc =
+        "警告: 未检测到 ANTHROPIC_API_KEY, 且客户端未声明 sampling capability.\n" +
+        "  → 配 API Key: echo 'ANTHROPIC_API_KEY=sk-ant-...' > ~/.council.env\n" +
+        "  → 或换支持 sampling 的客户端 (Claude Desktop / Claude Code)";
+    }
+
+    if (!logged) {
+      logged = true;
+      process.stderr.write(`[council mcp] ${modeDesc}\n`);
+      if (process.env.COUNCIL_DEBUG) {
+        process.stderr.write(
+          `[council mcp][debug] clientCaps=${JSON.stringify(clientCaps)}\n`,
+        );
+      }
+    }
+    return chosen;
+  });
+
   await server.connect(transport);
 }
 
