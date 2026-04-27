@@ -18,6 +18,7 @@ import { refineCommand } from "../src/commands/refine.ts";
 import { sessionListCommand, sessionShowCommand } from "../src/commands/session.ts";
 import { skillListCommand, skillShowCommand } from "../src/commands/skill.ts";
 import { statusCommand } from "../src/commands/status.ts";
+import { doctorCommand } from "../src/commands/doctor.ts";
 import { exportCommand } from "../src/commands/export.ts";
 import { serveCommand } from "../src/commands/serve.ts";
 
@@ -26,7 +27,7 @@ const program = new Command();
 program
   .name("council")
   .description("你的思考议会。捕获对话, 蒸馏思维, 召集多 persona 辩论。")
-  .version("0.3.1");
+  .version("0.4.0");
 
 // ━━━ init ━━━
 program
@@ -43,6 +44,14 @@ program
   .description("一眼看清: 已 capture 多少 session / 蒸出多少 persona / 跑过多少议会")
   .action(async () => {
     await statusCommand();
+  });
+
+// ━━━ doctor ━━━
+program
+  .command("doctor")
+  .description("体检: 检查 ~/.council 完整性 + ANTHROPIC_API_KEY + LLM 连通性")
+  .action(async () => {
+    await doctorCommand();
   });
 
 // ━━━ capture ━━━

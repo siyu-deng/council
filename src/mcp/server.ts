@@ -56,7 +56,7 @@ function collectStream(gen: AsyncGenerator<string>): Promise<string> {
 const server = new McpServer(
   {
     name: "council",
-    version: "0.3.2",
+    version: "0.4.0",
   },
   {
     capabilities: { tools: {}, prompts: {} },
