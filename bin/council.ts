@@ -28,7 +28,7 @@ const program = new Command();
 program
   .name("council")
   .description("你的思考议会。捕获对话, 蒸馏思维, 召集多 persona 辩论。")
-  .version("0.5.0");
+  .version("0.5.1");
 
 // ━━━ init ━━━
 program

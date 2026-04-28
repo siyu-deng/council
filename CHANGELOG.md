@@ -4,6 +4,62 @@
 
 ---
 
+## [0.5.1] — 2026-04-28
+
+### ✨ MCP 也能切模型了 — `council_convene` / `council_ask_persona` 加 `model` 参数
+
+之前 `--model` 只在 CLI (终端跑 `council convene`) 可用; MCP 模式 (在 Claude
+Desktop / Code / Cursor 里调) 没法传命令行参数, 只能用 config.yml 默认模型.
+
+v0.5.1 起, 两个最常用的 LLM 调用 tool 在 inputSchema 加了 `model` (optional):
+
+```typescript
+council_convene({ question, personas?, model? })
+council_ask_persona({ persona, question, model? })
+```
+
+LLM 客户端的体感 — 用户说 **"用 opus 帮我开议会决定要不要离职"**, Claude 自动:
+
+```typescript
+council_convene({
+  question: "我该不该接受 X 公司的 offer",
+  model: "opus"          // ← Claude 从用户语义自动填
+})
+```
+
+### 🏗 架构 — `withModelOverride()` + AsyncLocalStorage
+
+为什么不用 `process.env`: MCP server 是长进程, 多个 RPC 可能交错. 用全局 env 会
+有 race condition (并发调用会互相污染).
+
+引入 `AsyncLocalStorage` (Node 16+ 标准) 把 model override 限定到本次 tool call
+的 async chain. `loadConfig()` 优先读 ALS, 退到 env (CLI 用):
+
+```typescript
+// MCP tool handler:
+return await withModelOverride(model, async () => {
+  return await convene(question, { ... });
+});
+
+// loadConfig 内部:
+const override = modelOverrideStore.getStore() ?? process.env.COUNCIL_MODEL_OVERRIDE;
+```
+
+CLI 跑 `council convene --model opus` 仍走 env (短进程, 无并发问题).
+
+### 📊 model 参数描述 (LLM 客户端会读这个决定何时传)
+
+```
+"可选: 升级本次调用的模型. 短名 'haiku' (默认, 一杯咖啡 110 次议会) /
+ 'sonnet' (中端) / 'opus' (重大决策, 单次 ~$0.30). 也接受完整 model ID.
+ 不传 = 用 ~/.council/config.yml 配置. 重大人生/产品决策建议传 opus."
+```
+
+description 写得明确, 是为了让 LLM 客户端**自动**在用户语义触发"重大决策"时主动
+传 opus, 而不需要用户显式说"用 opus".
+
+---
+
 ## [0.5.0] — 2026-04-28
 
 ### ✨ Prompt Caching — 输入成本降 30-70%

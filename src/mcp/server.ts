@@ -5,6 +5,16 @@ import { setBackendResolver } from "../core/llm-backend.ts";
 import { SamplingBackend } from "../core/llm-sampling.ts";
 import { AnthropicBackend } from "../core/llm-anthropic.ts";
 import type { LLMBackend } from "../core/llm-backend.ts";
+import { withModelOverride } from "../core/config.ts";
+
+/**
+ * MCP tool 接受的 model 短名描述, 用在所有调 LLM 的 tool 的 inputSchema 里.
+ * 集中定义保证 LLM 客户端看到一致的提示.
+ */
+const MODEL_PARAM_DESC =
+  "可选: 升级本次调用的模型. 短名 'haiku' (默认, 一杯咖啡 110 次议会) / " +
+  "'sonnet' (中端) / 'opus' (重大决策, 单次 ~$0.30). 也接受完整 model ID. " +
+  "不传 = 用 ~/.council/config.yml 配置. 重大人生/产品决策建议传 opus.";
 
 // MCP stdio transport 要求 stdout 只承载 JSON-RPC。
 // 这个开关让 core/logger.ts 和 engine/render.ts 完全不写 stdout/stderr (也避免泄到调用方终端)。
@@ -56,7 +66,7 @@ function collectStream(gen: AsyncGenerator<string>): Promise<string> {
 const server = new McpServer(
   {
     name: "council",
-    version: "0.5.0",
+    version: "0.5.1",
   },
   {
     capabilities: { tools: {}, prompts: {} },
@@ -593,22 +603,25 @@ server.registerTool(
         .describe(
           "可选: 指定 persona refs (如 'mentors:naval'), 否则自动 summon",
         ),
+      model: z.string().optional().describe(MODEL_PARAM_DESC),
     },
   },
-  async ({ question, personas }) => {
+  async ({ question, personas, model }) => {
     requireInit();
-    const id = await convene(question, {
-      with: personas?.join(","),
+    return await withModelOverride(model, async () => {
+      const id = await convene(question, {
+        with: personas?.join(","),
+      });
+      const t = getTranscript(id);
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: t.body,
+          },
+        ],
+      };
     });
-    const t = getTranscript(id);
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: t.body,
-        },
-      ],
-    };
   },
 );
 
@@ -623,20 +636,23 @@ server.registerTool(
         .string()
         .describe('persona ref, 如 "mentors:naval" / "self:xxx"'),
       question: z.string(),
+      model: z.string().optional().describe(MODEL_PARAM_DESC),
     },
   },
-  async ({ persona: personaRef, question }) => {
+  async ({ persona: personaRef, question, model }) => {
     requireInit();
-    const p = getPersona(personaRef);
-    const text = await collectStream(streamStatement(question, p));
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: `## ${p.ref} 的回答\n\n${text}`,
-        },
-      ],
-    };
+    return await withModelOverride(model, async () => {
+      const p = getPersona(personaRef);
+      const text = await collectStream(streamStatement(question, p));
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: `## ${p.ref} 的回答\n\n${text}`,
+          },
+        ],
+      };
+    });
   },
 );
 
