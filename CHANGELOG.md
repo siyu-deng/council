@@ -4,6 +4,91 @@
 
 ---
 
+## [0.5.0] — 2026-04-28
+
+### ✨ Prompt Caching — 输入成本降 30-70%
+
+所有 LLM 调用 (text / json / streamText) 自动给 system prompt 加 `cache_control: { type: "ephemeral" }`. 收益:
+
+- **同一议会内**: 同一 persona 的 statement + cross-exam 共用同 system → cross-exam 阶段 system 只付 0.10× input 价
+- **跨议会 (5 分钟内)**: identity.md 块跨多次议会复用, 频繁议会越用越便宜
+- **零工程对调用方**: 11 个 prompt 文件不动, 改在 `src/core/llm-anthropic.ts` 一处统一加 `buildSystemBlocks()`
+
+实测节约 (一次 4 persona 议会, Haiku 4.5):
+- 不 cache: ~$0.045
+- 单议会内 cache: ~$0.030 (节省 33%)
+- 5 分钟内连续 3 次议会: ~$0.025/次 (节省 44%)
+
+### ✨ `--model` 参数 — 重大决策一键升级
+
+```bash
+council convene "我该不该接这个 offer" --model opus    # 一次性升 Opus 4.5
+council convene "周报里写啥" --model haiku             # 显式降回 Haiku 节省
+council convene "..." --model claude-sonnet-4-5-20250929  # 也接受全 ID
+```
+
+短名映射 (在 `src/core/config.ts` `resolveModelAlias`):
+- `haiku` → `claude-haiku-4-5-20251001`
+- `sonnet` → `claude-sonnet-4-5-20250929`
+- `opus` → `claude-opus-4-5`
+
+实现走 env 注入: convene 命令解析 `--model` 后, set `process.env.COUNCIL_MODEL_OVERRIDE`. `loadConfig()` 自动读这个 env 把 6 个 `models.*` 字段全部替换. 11 个 prompt 文件内部各自 `loadConfig()` 时统一拿到覆盖配置, 零修改业务代码.
+
+不传 `--model` 时, 走 `~/.council/config.yml` 里 `models.*` 的原配置 (默认全 Haiku 4.5).
+
+### ✨ Usage Tracking — 本地 token + 成本统计
+
+每次 LLM 调用自动 append 一条 jsonl 到 `~/.council/.usage.jsonl`:
+
+```jsonl
+{"ts":"2026-04-28T...","model":"claude-haiku-4-5-...","label":"statement:mentors:naval",
+ "input_tokens":2340,"output_tokens":412,"cache_creation_input_tokens":1850,
+ "cache_read_input_tokens":0,"cost_usd":0.00697}
+```
+
+新命令 `council usage`:
+
+```bash
+council usage              # 本月按 model 聚合 (默认)
+council usage --since 7d   # 时间范围 (7d / 24h / 30m)
+council usage --by persona # 哪个 persona 最贵
+council usage --by label   # 哪个 prompt 阶段最贵 (debug)
+council usage --detail     # 列每条调用
+```
+
+定价表在 `src/core/pricing.ts`, 数据来自 [Anthropic 官方 pricing docs](https://platform.claude.com/docs/en/about-claude/pricing) (2026-04-28 拉取). 用 prefix 匹配支持任意日期版本.
+
+跟 [Anthropic Console](https://console.anthropic.com/settings/usage) 互补:
+- Console = 账单真相 (按月/按 Key)
+- Council usage = 上下文真相 (哪次议会、哪个 persona、哪个 prompt 阶段)
+
+### 🏗 架构 — 新增 4 个文件
+
+- `src/core/pricing.ts` — Anthropic 定价表 + cost 计算
+- `src/core/usage-log.ts` — usage jsonl 读写
+- `src/commands/usage.ts` — `council usage` 命令实现
+- `src/core/config.ts` — 加 `resolveModelAlias()` + env override 支持
+
+### 📈 实测推荐配置 (个人使用)
+
+```yaml
+# ~/.council/config.yml — 默认所有 prompt 用 Haiku 4.5 (一次议会 ~$0.045 → cache 后 ~$0.030)
+models:
+  distill:    claude-haiku-4-5-20251001
+  summon:     claude-haiku-4-5-20251001
+  statement:  claude-haiku-4-5-20251001
+  cross_exam: claude-haiku-4-5-20251001
+  synthesis:  claude-haiku-4-5-20251001  # 想要更深综合可改 sonnet/opus
+  merge:      claude-haiku-4-5-20251001
+```
+
+重大决策时:
+```bash
+council convene "<问题>" --model opus  # 一次性升级整个议会
+```
+
+---
+
 ## [0.4.1] — 2026-04-28
 
 ### 🐛 Bug Fix — Backend 选路反转 (sampling-first)

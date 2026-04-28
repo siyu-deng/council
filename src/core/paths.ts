@@ -30,6 +30,12 @@ export const paths = {
   summonCache: () => join(councilRoot(), ".state", "summon-cache.json"),
 
   mcpExport: () => join(councilRoot(), "exports", "mcp-server"),
+
+  /** MCP server 启动时写的诊断快照, 含 backend 选择 + clientCapabilities */
+  startupLog: () => join(councilRoot(), ".last-startup.json"),
+
+  /** 每次 LLM 调用 append 一条 (jsonl), 含 token + 成本估算. 给 council usage 用. */
+  usageLog: () => join(councilRoot(), ".usage.jsonl"),
 };
 
 export function repoRoot(): string {

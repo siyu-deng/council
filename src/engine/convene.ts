@@ -27,7 +27,14 @@ export interface ConveneOpts {
   runId?: string;
   /** 是否用结构化 synthesis (JSON 输出). 默认 true — 网页决议卡需要 */
   structuredSynthesis?: boolean;
+  /**
+   * 覆盖本次议会**全部** LLM 调用的模型 (一次性升级判断质量).
+   * 接受短名 haiku/sonnet/opus 或完整 model ID.
+   * 不传 = 用 ~/.council/config.yml 里 models.*. 默认全 Haiku 4.5.
+   */
+  modelOverride?: string;
 }
+
 
 function personaMeta(p: Persona): PersonaMeta {
   return {
@@ -44,7 +51,13 @@ export async function convene(
   question: string,
   opts: ConveneOpts,
 ): Promise<string> {
+  // --model 覆盖通过 env 传播给所有 prompt. 必须在 loadConfig 之前 set,
+  // 因为 prompt 文件内部各自 loadConfig() 时会读这个 env.
+  if (opts.modelOverride) {
+    process.env.COUNCIL_MODEL_OVERRIDE = opts.modelOverride;
+  }
   const cfg = loadConfig();
+
   const runId = opts.runId ?? newRunId("convene", slugifyQuestion(question));
   const E = makeEmitter(runId, "convene");
   E.runStarted({ question });

@@ -15,6 +15,8 @@ export interface ConveneCmdOpts {
   watch?: boolean;
   /** --no-structured: 跳过结构化 synthesis, 走流式 Markdown 回退 */
   structured?: boolean;
+  /** --model: 覆盖所有 LLM 调用的模型 (haiku/sonnet/opus 短名 或全 model ID) */
+  model?: string;
 }
 
 export async function conveneCommand(
@@ -34,6 +36,7 @@ export async function conveneCommand(
   await convene(question, {
     with: opts.with,
     structuredSynthesis: opts.structured !== false,
+    modelOverride: opts.model,
   });
 }
 
@@ -92,6 +95,7 @@ async function conveneWithWatch(
       with: opts.with,
       runId,
       structuredSynthesis: opts.structured !== false,
+      modelOverride: opts.model,
     });
   } catch (err) {
     log.error(`议会失败: ${String(err)}`);

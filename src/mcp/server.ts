@@ -56,7 +56,7 @@ function collectStream(gen: AsyncGenerator<string>): Promise<string> {
 const server = new McpServer(
   {
     name: "council",
-    version: "0.4.1",
+    version: "0.5.0",
   },
   {
     capabilities: { tools: {}, prompts: {} },
@@ -914,6 +914,35 @@ export async function startMcpServer(): Promise<void> {
         process.stderr.write(
           `[council mcp][debug] clientCaps=${JSON.stringify(clientCaps)} hasKey=${hasApiKey} preferByok=${preferByok}\n`,
         );
+      }
+      // 诊断: 写一份启动状态到 ~/.council/.last-startup.json, 用户/作者直接 cat
+      // 即可看到当前 backend 选了什么, client capabilities 真实长什么样.
+      // 不依赖 Claude Code/Desktop 的 mcp log 路径 (那个不同客户端不一样).
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const fs = require("node:fs") as typeof import("node:fs");
+        fs.writeFileSync(
+          paths.startupLog(),
+          JSON.stringify(
+            {
+              ts: new Date().toISOString(),
+              version: "0.4.1",
+              chosen_backend: chosen.name,
+              has_api_key: hasApiKey,
+              api_key_prefix: hasApiKey
+                ? `${process.env.ANTHROPIC_API_KEY!.slice(0, 12)}...`
+                : null,
+              client_capabilities: clientCaps ?? null,
+              supports_sampling: supportsSampling,
+              prefer_byok_override: preferByok,
+              mode_description: modeDesc,
+            },
+            null,
+            2,
+          ),
+        );
+      } catch {
+        /* 写不进去就算了, 不影响主流程 */
       }
     }
     return chosen;

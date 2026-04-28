@@ -19,6 +19,7 @@ import { sessionListCommand, sessionShowCommand } from "../src/commands/session.
 import { skillListCommand, skillShowCommand } from "../src/commands/skill.ts";
 import { statusCommand } from "../src/commands/status.ts";
 import { doctorCommand } from "../src/commands/doctor.ts";
+import { usageCommand } from "../src/commands/usage.ts";
 import { exportCommand } from "../src/commands/export.ts";
 import { serveCommand } from "../src/commands/serve.ts";
 
@@ -27,7 +28,7 @@ const program = new Command();
 program
   .name("council")
   .description("你的思考议会。捕获对话, 蒸馏思维, 召集多 persona 辩论。")
-  .version("0.4.1");
+  .version("0.5.0");
 
 // ━━━ init ━━━
 program
@@ -52,6 +53,21 @@ program
   .description("体检: 检查 ~/.council 完整性 + ANTHROPIC_API_KEY + LLM 连通性")
   .action(async () => {
     await doctorCommand();
+  });
+
+// ━━━ usage ━━━
+program
+  .command("usage")
+  .description("看本地 LLM 用量统计 (token + 成本估算). 跟 Anthropic Console 互补")
+  .option("--since <range>", "时间范围, 形如 7d / 24h / 30m. 默认本月")
+  .option(
+    "--by <dim>",
+    "聚合维度: model (默认) / persona / label",
+    /^(model|persona|label)$/,
+  )
+  .option("--detail", "列出每条调用 (debug)")
+  .action(async (opts) => {
+    await usageCommand(opts);
   });
 
 // ━━━ capture ━━━
@@ -96,6 +112,10 @@ program
   .option(
     "-w, --with <personas>",
     '逗号分隔, 如 "mentors:naval,self:first-principles"',
+  )
+  .option(
+    "-m, --model <name>",
+    "覆盖所有 LLM 调用的模型. 短名: haiku / sonnet / opus, 或全 model ID. 默认按 ~/.council/config.yml",
   )
   .option(
     "--watch",

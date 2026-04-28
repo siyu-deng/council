@@ -8,9 +8,29 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { ApiKeyMissingError } from "./errors.ts";
 import { log } from "./logger.ts";
+import { recordUsage } from "./usage-log.ts";
 import type { LLMBackend, CallOptions } from "./llm-backend.ts";
 
 const DEFAULT_MAX_TOKENS = 2048;
+
+/**
+ * 把 system prompt 包成 cache_control block.
+ * 收益: 同一 persona 在 statement + cross-exam 中被复用; 同一 identity 块跨多次议会 5 分钟内复用.
+ * 当 system 字符串不存在或太短 (低于 model 最小阈值: Haiku 2048 tokens, Sonnet/Opus 1024 tokens),
+ * Anthropic 会**静默不 cache**——透传 cache_control 不会出错, 只是没收益.
+ */
+function buildSystemBlocks(
+  system?: string,
+): Anthropic.Messages.TextBlockParam[] | undefined {
+  if (!system) return undefined;
+  return [
+    {
+      type: "text" as const,
+      text: system,
+      cache_control: { type: "ephemeral" as const },
+    },
+  ];
+}
 
 let _client: Anthropic | null = null;
 function client(): Anthropic {
@@ -48,10 +68,15 @@ export const AnthropicBackend: LLMBackend = {
         model: opts.model,
         max_tokens: opts.maxTokens ?? DEFAULT_MAX_TOKENS,
         temperature: opts.temperature ?? 0.4,
-        system: opts.system,
+        system: buildSystemBlocks(opts.system),
         messages: [{ role: "user", content: userPrompt }],
       }),
     );
+    recordUsage({
+      model: opts.model,
+      label: opts.label,
+      usage: msg.usage,
+    });
     const block = msg.content.find((b) => b.type === "text");
     return block && block.type === "text" ? block.text : "";
   },
@@ -69,7 +94,7 @@ export const AnthropicBackend: LLMBackend = {
         model: opts.model,
         max_tokens: opts.maxTokens ?? DEFAULT_MAX_TOKENS,
         temperature: opts.temperature ?? 0.3,
-        system: opts.system,
+        system: buildSystemBlocks(opts.system),
         tools: [
           {
             name: toolName,
@@ -82,6 +107,11 @@ export const AnthropicBackend: LLMBackend = {
         messages: [{ role: "user", content: userPrompt }],
       }),
     );
+    recordUsage({
+      model: opts.model,
+      label: opts.label,
+      usage: msg.usage,
+    });
     const tool = msg.content.find((b) => b.type === "tool_use");
     if (!tool || tool.type !== "tool_use")
       throw new Error("Claude 未按 tool 返回 JSON");
@@ -96,7 +126,7 @@ export const AnthropicBackend: LLMBackend = {
       model: opts.model,
       max_tokens: opts.maxTokens ?? DEFAULT_MAX_TOKENS,
       temperature: opts.temperature ?? 0.5,
-      system: opts.system,
+      system: buildSystemBlocks(opts.system),
       messages: [{ role: "user", content: userPrompt }],
     });
     for await (const event of stream) {
@@ -106,6 +136,17 @@ export const AnthropicBackend: LLMBackend = {
       ) {
         yield event.delta.text;
       }
+    }
+    // 流结束后 finalMessage() 包含 token 统计. await 它拿真实 usage.
+    try {
+      const final = await stream.finalMessage();
+      recordUsage({
+        model: opts.model,
+        label: opts.label,
+        usage: final.usage,
+      });
+    } catch {
+      /* 流式调用偶尔拿不到 finalMessage, 不影响主流程 */
     }
   },
 };
