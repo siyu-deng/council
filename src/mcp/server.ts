@@ -56,7 +56,7 @@ function collectStream(gen: AsyncGenerator<string>): Promise<string> {
 const server = new McpServer(
   {
     name: "council",
-    version: "0.4.0",
+    version: "0.4.1",
   },
   {
     capabilities: { tools: {}, prompts: {} },
@@ -853,33 +853,53 @@ function extractFirstQuote(body: string): string | null {
 export async function startMcpServer(): Promise<void> {
   const transport = new StdioServerTransport();
 
-  // ━━━ Backend 选路 (lazy) ━━━
+  // ━━━ Backend 选路 (lazy, sampling-first) ━━━
   // 注册一个 resolver, 第一次 LLM 调用时触发. 那时 initialize 早已完成,
-  // client capabilities 必然 ready. (实测 oninitialized 触发时 SDK 内部
-  // _clientCapabilities 仍可能 undefined, 反直觉但确实如此.)
+  // client capabilities 必然 ready.
   //
-  // 三种情况:
-  //   1. 有 ANTHROPIC_API_KEY → AnthropicBackend (BYOK 优先, 流式 + 不弹窗)
-  //   2. 无 API Key + 客户端支持 sampling → SamplingBackend (借宿主 LLM)
-  //   3. 无 API Key + 客户端不支持 sampling → AnthropicBackend (会立刻抛
-  //      ApiKeyMissingError, 给用户明确提示)
+  // 优先级 (v0.4.1 修订, 反转了 v0.4.0 的设计):
+  //   1. 客户端支持 sampling → SamplingBackend (借宿主 LLM, 用户无需配 Key)
+  //      这是大多数 MCP 用户的真实意图——已在 Claude Desktop/Code 付订阅,
+  //      不愿为 Council 二次付 API 钱.
+  //   2. 客户端不支持 sampling 但有 ANTHROPIC_API_KEY → AnthropicBackend (兜底)
+  //      Cursor 等不支持 sampling 的客户端走这条.
+  //   3. 都没有 → AnthropicBackend (调用时报 ApiKeyMissingError 给清晰提示)
+  //
+  // Override:
+  //   - COUNCIL_PREFER_BYOK=1: 高级用户显式想要流式 + 不弹窗时, 强制 BYOK
+  //     (ANTHROPIC_API_KEY 必须有效, 否则报 401)
+  //
+  // 为什么不再"BYOK 优先":
+  //   - 工程师视角 ("流式更顺") vs 用户视角 ("不要消耗我的 Key") 取后者
+  //   - 用户的 ANTHROPIC_API_KEY 经常是从全局环境变量泄露到 MCP 进程的, 不是
+  //     用户主动想给 Council 用. Sampling-first 更尊重用户意图.
   let logged = false;
   setBackendResolver((): LLMBackend => {
     const hasApiKey = !!process.env.ANTHROPIC_API_KEY;
+    const preferByok = process.env.COUNCIL_PREFER_BYOK === "1";
     const clientCaps = server.server.getClientCapabilities();
     const supportsSampling = !!clientCaps?.sampling;
 
     let chosen: LLMBackend;
     let modeDesc: string;
 
-    if (hasApiKey) {
+    if (preferByok && hasApiKey) {
+      // 显式 override: 用户主动想要 BYOK 流式体验
       chosen = AnthropicBackend;
-      modeDesc = "backend=anthropic-api (BYOK, ANTHROPIC_API_KEY 已配)";
+      modeDesc = "backend=anthropic-api (COUNCIL_PREFER_BYOK=1 显式覆盖)";
     } else if (supportsSampling) {
+      // 默认路径: 客户端支持 sampling, 用宿主 LLM
       chosen = new SamplingBackend(server);
+      modeDesc = hasApiKey
+        ? "backend=mcp-sampling (sampling-first; 检测到 ANTHROPIC_API_KEY 但默认不消耗, 设 COUNCIL_PREFER_BYOK=1 可改)"
+        : "backend=mcp-sampling (借宿主客户端 LLM, 用户无需配 API Key)";
+    } else if (hasApiKey) {
+      // 兜底: 客户端不支持 sampling, 走 BYOK
+      chosen = AnthropicBackend;
       modeDesc =
-        "backend=mcp-sampling (借宿主客户端 LLM, 用户无需配 API Key)";
+        "backend=anthropic-api (客户端不支持 sampling, 用 ANTHROPIC_API_KEY 兜底)";
     } else {
+      // 都没有
       chosen = AnthropicBackend;
       modeDesc =
         "警告: 未检测到 ANTHROPIC_API_KEY, 且客户端未声明 sampling capability.\n" +
@@ -892,7 +912,7 @@ export async function startMcpServer(): Promise<void> {
       process.stderr.write(`[council mcp] ${modeDesc}\n`);
       if (process.env.COUNCIL_DEBUG) {
         process.stderr.write(
-          `[council mcp][debug] clientCaps=${JSON.stringify(clientCaps)}\n`,
+          `[council mcp][debug] clientCaps=${JSON.stringify(clientCaps)} hasKey=${hasApiKey} preferByok=${preferByok}\n`,
         );
       }
     }

@@ -4,6 +4,40 @@
 
 ---
 
+## [0.4.1] — 2026-04-28
+
+### 🐛 Bug Fix — Backend 选路反转 (sampling-first)
+
+v0.4.0 设计的"BYOK 优先"是个错误的默认值. 实际场景里:
+
+- 用户的 `ANTHROPIC_API_KEY` 经常是**从全局环境变量泄露**到 MCP 进程的, 不是用户主动想给 Council 用的算力来源
+- 用户在 Claude Desktop / Claude Code 已经付订阅, 真实意图是"用宿主 LLM, 不消耗我的 API 钱"
+- v0.4.0 检测到 env 里有 Key 字符串就走 BYOK, 即使 Key 已被禁用 — 用户面对的是 401 错误而不是优雅 fallback
+
+**新优先级 (反转)**:
+
+```
+1. 客户端支持 sampling → SamplingBackend (默认意图: 借宿主 LLM)
+2. 客户端不支持 sampling 但有 ANTHROPIC_API_KEY → AnthropicBackend 兜底
+   (Cursor 等不支持 sampling 协议的客户端走这条路径)
+3. 都没有 → 报错 + 提示
+```
+
+**Override**: 设 `COUNCIL_PREFER_BYOK=1` 强制 BYOK (高级用户想要流式 + 不弹窗)
+
+### 📊 客户端 Sampling 兼容性 (基于实测校正)
+
+| 客户端 | Sampling | 修订后默认行为 |
+|--------|---------|---------------|
+| Claude Code | ✅ | 走 sampling, 借订阅 |
+| Claude Desktop | ✅ | 走 sampling, 借订阅 |
+| **Cursor** | ❌ **实测不支持** | 必须 BYOK |
+| Cherry Studio / 其他 | ❓ 未实测 | 必须 BYOK |
+
+v0.4.0 文档里 Cursor 标"部分支持"是错的——实测**不支持**.
+
+---
+
 ## [0.4.0] — 2026-04-27
 
 ### ✨ 新增 — MCP Sampling 模式 (零配置使用)
